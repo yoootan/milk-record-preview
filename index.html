@@ -344,6 +344,9 @@ body {
 }
 .rec-icon.breast { background: var(--icon-breast-bg); }
 .rec-icon.formula { background: var(--icon-formula-bg); }
+.rec-icon.spit { background: rgba(239,83,80,0.15); }
+.rec-icon svg { width: 18px; height: 18px; }
+.rec-icon.spit svg { width: 22px; height: 22px; }
 .rec-info { flex: 1; margin-left: 10px; }
 .rec-title { font-size: 14px; font-weight: 600; }
 .rec-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
@@ -486,6 +489,42 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 .toggle.on::after { left: 25px; }
+
+/* ===== 吐き戻し ===== */
+.spit-area {
+  display: flex; justify-content: flex-end;
+  padding: 6px 20px 10px;
+}
+.spit-btn {
+  position: relative;
+  background: var(--gray); border: none; border-radius: 18px;
+  padding: 7px 18px; font-family: inherit;
+  font-size: 12px; font-weight: 600; color: var(--text-sub);
+  cursor: pointer; transition: background 0.2s, transform 0.1s;
+  user-select: none; -webkit-user-select: none;
+  touch-action: none;
+}
+.spit-btn:active { transform: scale(0.95); }
+.spit-options {
+  display: none; position: absolute;
+  bottom: calc(100% + 8px); right: 0;
+  background: var(--card); border-radius: 16px;
+  padding: 6px; gap: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  flex-direction: row; white-space: nowrap;
+  z-index: 50;
+}
+.spit-options.active { display: flex; }
+.spit-option {
+  padding: 10px 16px; border-radius: 12px;
+  font-size: 13px; font-weight: 600; color: var(--text-sub);
+  transition: background 0.15s, transform 0.15s, color 0.15s;
+  text-align: center;
+}
+.spit-option.highlight {
+  background: var(--accent-light); color: var(--accent);
+  transform: scale(1.1);
+}
 </style>
 </head>
 <body data-theme="orange">
@@ -510,7 +549,7 @@ body {
     <span>母乳</span>
   </button>
   <button class="tab" id="tab-formula" onclick="switchTab('formula')">
-    <span>粉ミルク</span>
+    <span>ミルク</span>
   </button>
 </div>
 
@@ -614,9 +653,21 @@ body {
                 stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.12" fill="none"/>
         </svg>
       </div>
-      <div class="bottle-hint" id="bottle-hint">哺乳瓶をタッチして量をえらぶ</div>
+      <div class="bottle-hint" id="bottle-hint"></div>
     </div>
   </div>
+</div>
+
+<!-- 吐き戻し -->
+<div class="spit-area">
+  <button class="spit-btn" id="spit-btn">
+    吐き戻し
+    <div class="spit-options" id="spit-options">
+      <div class="spit-option" data-amount="small">少量</div>
+      <div class="spit-option" data-amount="medium">中量</div>
+      <div class="spit-option" data-amount="large">大量</div>
+    </div>
+  </button>
 </div>
 
 <!-- 記録一覧 -->
@@ -990,9 +1041,62 @@ function updateHint(state) {
     hint.textContent = '✓ 記録しました！';
     hint.className = 'bottle-hint saving';
   } else {
-    hint.textContent = '哺乳瓶をタッチして量をえらぶ';
+    hint.textContent = '';
     hint.className = 'bottle-hint';
   }
+}
+
+// ===== Spit Up =====
+let spitActive = false;
+let spitHighlight = null;
+
+function initSpit() {
+  const btn = document.getElementById('spit-btn');
+  btn.addEventListener('touchstart', onSpitStart, { passive: false });
+  btn.addEventListener('mousedown', onSpitStart);
+  document.addEventListener('touchmove', onSpitMove, { passive: false });
+  document.addEventListener('mousemove', onSpitMove);
+  document.addEventListener('touchend', onSpitEnd);
+  document.addEventListener('mouseup', onSpitEnd);
+}
+
+function onSpitStart(e) {
+  e.preventDefault();
+  spitActive = true;
+  spitHighlight = null;
+  document.getElementById('spit-options').classList.add('active');
+  // Clear any previous highlight
+  document.querySelectorAll('.spit-option').forEach(o => o.classList.remove('highlight'));
+}
+
+function onSpitMove(e) {
+  if (!spitActive) return;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  spitHighlight = null;
+  document.querySelectorAll('.spit-option').forEach(opt => {
+    const r = opt.getBoundingClientRect();
+    if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+      opt.classList.add('highlight');
+      spitHighlight = opt.dataset.amount;
+    } else {
+      opt.classList.remove('highlight');
+    }
+  });
+}
+
+function onSpitEnd(e) {
+  if (!spitActive) return;
+  spitActive = false;
+  document.getElementById('spit-options').classList.remove('active');
+  document.querySelectorAll('.spit-option').forEach(o => o.classList.remove('highlight'));
+  if (spitHighlight) {
+    const labels = { small: '少量', medium: '中量', large: '大量' };
+    const r = { id: Date.now() + '', type: 'spitUp', amount: spitHighlight, startedAt: new Date().toISOString() };
+    records.unshift(r); save(); render();
+    showToast(`吐き戻し（${labels[spitHighlight]}）記録しました`);
+  }
+  spitHighlight = null;
 }
 
 // ===== Delete =====
@@ -1005,7 +1109,9 @@ function askDelete(id) {
     const d = new Date(r.startedAt);
     const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     const isB = r.type === 'breastMilk';
-    const label = isB ? `母乳（${r.side === 'left' ? 'ひだり' : 'みぎ'}）` : `ミルク ${r.amountMl}ml`;
+    const isS = r.type === 'spitUp';
+    const spitLabels = { small: '少量', medium: '中量', large: '大量' };
+    const label = isS ? `吐き戻し（${spitLabels[r.amount] || ''}）` : isB ? `母乳（${r.side === 'left' ? 'ひだり' : 'みぎ'}）` : `ミルク ${r.amountMl}ml`;
     document.getElementById('confirm-msg').textContent = `${t} ${label} を削除しますか？`;
   }
   document.getElementById('confirm-overlay').classList.add('active');
@@ -1046,13 +1152,29 @@ function render() {
     rs.forEach(r => {
       const el = document.createElement('div'); el.className = 'record-item';
       const isB = r.type === 'breastMilk';
+      const isS = r.type === 'spitUp';
       const d = new Date(r.startedAt);
       const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
       const dur = r.durationSeconds > 0 ? fmtDur(r.durationSeconds) : '';
+      const spitLabels = { small: '少量', medium: '中量', large: '大量' };
+      let icon, iconClass, title;
+      // 母乳: オリジナルハート
+      const breastSvg = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 4 15 4 9.5C4 6.5 6.5 4 9 4C10.5 4 11.5 5 12 6C12.5 5 13.5 4 15 4C17.5 4 20 6.5 20 9.5C20 15 12 21 12 21Z" fill="var(--accent)" opacity="0.65"/></svg>`;
+      // 粉ミルク: 哺乳瓶
+      const formulaSvg = `<svg viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="3" rx="1.5" fill="#A0C4DD"/><path d="M8 5h8v1.5l1.5 2v10a3 3 0 01-3 3h-5a3 3 0 01-3-3v-10l1.5-2V5z" fill="#E8F4FD" stroke="#A0C4DD" stroke-width="0.8"/><rect x="7.5" y="12" width="9" height="6" rx="0.5" fill="#FFE4B5" opacity="0.7"/><line x1="14" y1="10" x2="15.5" y2="10" stroke="#A0C4DD" stroke-width="0.6"/><line x1="14" y1="12" x2="16" y2="12" stroke="#A0C4DD" stroke-width="0.6"/><line x1="14" y1="14" x2="15.5" y2="14" stroke="#A0C4DD" stroke-width="0.6"/></svg>`;
+      // 吐き戻し: 上向き矢印（赤）
+      const spitSvg = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 19V7" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"/><path d="M7 11l5-6 5 6" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      if (isS) {
+        icon = spitSvg; iconClass = 'spit'; title = `吐き戻し（${spitLabels[r.amount] || ''}）`;
+      } else if (isB) {
+        icon = breastSvg; iconClass = 'breast'; title = `母乳（${r.side === 'left' ? 'ひだり' : 'みぎ'}）`;
+      } else {
+        icon = formulaSvg; iconClass = 'formula'; title = `ミルク ${r.amountMl}ml`;
+      }
       el.innerHTML = `
-        <div class="rec-icon ${isB ? 'breast' : 'formula'}">${isB ? '❤️' : '🍼'}</div>
+        <div class="rec-icon ${iconClass}">${icon}</div>
         <div class="rec-info">
-          <div class="rec-title">${isB ? `母乳（${r.side === 'left' ? 'ひだり' : 'みぎ'}）` : `ミルク ${r.amountMl}ml`}</div>
+          <div class="rec-title">${title}</div>
           ${dur ? `<div class="rec-sub">${dur}</div>` : ''}
         </div>
         <div class="rec-time">${t}</div>
@@ -1112,6 +1234,7 @@ document.getElementById('night-toggle').classList.toggle('on', nightMode);
 applyNightMode();
 updateLiveCount();
 setInterval(updateLiveCount, 8000);
+initSpit();
 render();
 
 // 哺乳瓶初期化
