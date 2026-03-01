@@ -773,7 +773,7 @@ function initBottle() {
 function drawScales() {
   const g = document.getElementById('bottle-scales');
   g.innerHTML = '';
-  for (let v = 0; v <= BOTTLE_MAX; v += 10) {
+  for (let v = 10; v <= BOTTLE_MAX - 10; v += 10) {
     const pct = v / BOTTLE_MAX;
     const y = BOTTLE_BOT - pct * BOTTLE_H;
     const isMajor = v % 50 === 0;
@@ -864,9 +864,8 @@ function onBottleTouchMove(e) {
   if (!isInsideBottle(t.clientX, t.clientY)) {
     // 哺乳瓶外に出た → キャンセル
     isTouching = false;
-    setMilkLevel(mlBeforeTouch);
-    updateHint('cancel');
-    setTimeout(() => updateHint('idle'), 1200);
+    setMilkLevel(0);
+    updateHint('idle');
     return;
   }
   e.preventDefault();
@@ -882,9 +881,8 @@ function onBottleTouchEnd() {
 function onBottleTouchCancel() {
   if (!isTouching) return;
   isTouching = false;
-  setMilkLevel(mlBeforeTouch);
-  updateHint('cancel');
-  setTimeout(() => updateHint('idle'), 1200);
+  setMilkLevel(0);
+  updateHint('idle');
 }
 
 function onBottleMouseDown(e) {
@@ -898,9 +896,8 @@ function onBottleMouseMove(e) {
   if (!isTouching) return;
   if (!isInsideBottle(e.clientX, e.clientY)) {
     isTouching = false;
-    setMilkLevel(mlBeforeTouch);
-    updateHint('cancel');
-    setTimeout(() => updateHint('idle'), 1200);
+    setMilkLevel(0);
+    updateHint('idle');
     return;
   }
   setMilkLevel(yToMl(e.clientY));
@@ -940,9 +937,6 @@ function updateHint(state) {
   } else if (state === 'saved') {
     hint.textContent = '✓ 記録しました！';
     hint.className = 'bottle-hint saving';
-  } else if (state === 'cancel') {
-    hint.textContent = '瓶の外に出たのでキャンセル';
-    hint.className = 'bottle-hint';
   } else {
     hint.textContent = '哺乳瓶をタッチして量をえらぶ';
     hint.className = 'bottle-hint';
