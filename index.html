@@ -153,11 +153,11 @@ body {
 @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
 .live-text {
   font-size: 12px; font-weight: 600; color: var(--text-sub);
-  line-height: 1.4;
+  line-height: 1; letter-spacing: 0.5px;
 }
 .live-count {
   font-size: 18px; font-weight: 800; color: var(--accent);
-  margin: 0 2px;
+  margin: 0 4px; vertical-align: middle;
 }
 
 /* ===== ヘッダー ===== */
@@ -492,7 +492,7 @@ body {
 <div class="live-banner">
   <span class="live-dot"></span>
   <div class="live-text">
-    いま日本で<span class="live-count" id="live-count">1,247</span>人が授乳中
+    いま<span class="live-count" id="live-count">1,247</span>人が授乳中
   </div>
 </div>
 
