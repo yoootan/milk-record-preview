@@ -345,7 +345,45 @@ body {
 .rec-info { flex: 1; margin-left: 10px; }
 .rec-title { font-size: 14px; font-weight: 600; }
 .rec-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
-.rec-time { font-size: 13px; font-weight: 600; color: var(--text-sub); }
+.rec-time { font-size: 13px; font-weight: 600; color: var(--text-sub); margin-right: 8px; }
+.rec-delete {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text-sub); opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.rec-delete:active { opacity: 1; background: rgba(239,83,80,0.12); color: var(--red); }
+
+/* ===== 確認モーダル ===== */
+.confirm-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35); z-index: 300;
+  align-items: center; justify-content: center;
+}
+.confirm-overlay.active { display: flex; }
+.confirm-dialog {
+  background: var(--bg); border-radius: 20px;
+  padding: 24px; width: 280px; text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: background 0.35s;
+}
+.confirm-dialog .confirm-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 6px;
+}
+.confirm-dialog .confirm-msg {
+  font-size: 13px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.5;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button {
+  flex: 1; padding: 11px 0; border-radius: 14px; border: none;
+  font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: transform 0.1s;
+}
+.confirm-actions button:active { transform: scale(0.95); }
+.confirm-cancel { background: var(--gray); color: var(--text); }
+.confirm-ok { background: var(--red); color: white; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text-sub); opacity: 0.5; }
 .empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
@@ -584,6 +622,18 @@ body {
   <div class="empty-state" id="empty-state">
     <div class="empty-icon">📝</div>
     <p>ボタンを押して記録をはじめましょう</p>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="confirm-overlay" id="confirm-overlay" onclick="cancelDelete()">
+  <div class="confirm-dialog" onclick="event.stopPropagation()">
+    <div class="confirm-title">記録を削除</div>
+    <div class="confirm-msg" id="confirm-msg">この記録を削除しますか？</div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" onclick="cancelDelete()">キャンセル</button>
+      <button class="confirm-ok" onclick="confirmDelete()">削除する</button>
+    </div>
   </div>
 </div>
 
@@ -943,6 +993,37 @@ function updateHint(state) {
   }
 }
 
+// ===== Delete =====
+let deleteTargetId = null;
+
+function askDelete(id) {
+  deleteTargetId = id;
+  const r = records.find(rec => rec.id === id);
+  if (r) {
+    const d = new Date(r.startedAt);
+    const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const isB = r.type === 'breastMilk';
+    const label = isB ? `母乳（${r.side === 'left' ? 'ひだり' : 'みぎ'}）` : `ミルク ${r.amountMl}ml`;
+    document.getElementById('confirm-msg').textContent = `${t} ${label} を削除しますか？`;
+  }
+  document.getElementById('confirm-overlay').classList.add('active');
+}
+
+function confirmDelete() {
+  if (deleteTargetId) {
+    records = records.filter(r => r.id !== deleteTargetId);
+    save(); render();
+    showToast('記録を削除しました');
+  }
+  deleteTargetId = null;
+  document.getElementById('confirm-overlay').classList.remove('active');
+}
+
+function cancelDelete() {
+  deleteTargetId = null;
+  document.getElementById('confirm-overlay').classList.remove('active');
+}
+
 // ===== Records =====
 function save() { localStorage.setItem('milkRecords', JSON.stringify(records)); }
 function render() {
@@ -972,7 +1053,8 @@ function render() {
           <div class="rec-title">${isB ? `母乳（${r.side === 'left' ? 'ひだり' : 'みぎ'}）` : `ミルク ${r.amountMl}ml`}</div>
           ${dur ? `<div class="rec-sub">${dur}</div>` : ''}
         </div>
-        <div class="rec-time">${t}</div>`;
+        <div class="rec-time">${t}</div>
+        <button class="rec-delete" onclick="askDelete('${r.id}')" aria-label="削除">✕</button>`;
       area.appendChild(el);
     });
   });
