@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+<title>授乳きろく</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg: #FFF9F2;
+  --card: #FFFFFF;
+  --peach: #F4845F;
+  --peach-light: #FFE8DF;
+  --pink: #F78DA7;
+  --pink-light: #FFE4EC;
+  --orange: #FFB347;
+  --orange-light: #FFF0D6;
+  --brown: #6D4C41;
+  --brown-light: #A1887F;
+  --gray: #F0EBE5;
+  --red: #EF5350;
+  --green: #66BB6A;
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: var(--bg);
+  color: var(--brown);
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ===== ヘッダー ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 6px;
+}
+.header h1 { font-size: 18px; font-weight: 800; }
+.settings-btn {
+  background: none; border: none; font-size: 20px;
+  color: var(--brown-light); cursor: pointer;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ===== タブ ===== */
+.tab-bar {
+  display: flex;
+  margin: 6px 20px 0;
+  padding: 3px;
+  background: var(--gray);
+  border-radius: 28px;
+}
+.tab {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 11px 0;
+  border-radius: 25px; border: none; background: transparent;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  color: var(--brown-light); cursor: pointer;
+  transition: all 0.25s ease;
+}
+.tab.active {
+  background: var(--card);
+  font-weight: 700; color: var(--peach);
+  box-shadow: 0 2px 10px rgba(244,132,95,0.18);
+}
+
+/* ===== 操作エリア ===== */
+.action-area {
+  flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 20px;
+  min-height: 320px;
+  justify-content: center;
+}
+.view { display: none; flex-direction: column; align-items: center; width: 100%; }
+.view.active { display: flex; }
+
+/* ===== タイマー ===== */
+.timer {
+  font-size: 56px; font-weight: 700;
+  color: var(--brown-light);
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+  transition: color 0.3s;
+  font-variant-numeric: tabular-nums;
+}
+.timer.running { color: var(--peach); }
+.status-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--brown-light);
+  height: 20px;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 6px;
+}
+.pulse-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--red);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ===== 丸ボタン共通 ===== */
+.circle-btn {
+  border-radius: 50%; border: none;
+  color: white; cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: inherit; font-weight: 700;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  user-select: none; -webkit-user-select: none;
+}
+.circle-btn:active { transform: scale(0.93); }
+
+/* 左右ボタン */
+.side-buttons { display: flex; gap: 24px; }
+.side-btn {
+  width: 130px; height: 130px; font-size: 17px; gap: 2px;
+}
+.side-btn .arrow { font-size: 36px; line-height: 1; }
+.side-btn.left {
+  background: linear-gradient(145deg, #F78DA7, #F4845F);
+  box-shadow: 0 8px 28px rgba(247,141,167,0.35);
+}
+.side-btn.right {
+  background: linear-gradient(145deg, #FFB347, #F4845F);
+  box-shadow: 0 8px 28px rgba(255,179,71,0.35);
+}
+
+/* スタートボタン */
+.start-btn {
+  width: 150px; height: 150px; font-size: 17px; gap: 2px;
+  background: linear-gradient(145deg, #FFB347, #F4845F);
+  box-shadow: 0 10px 32px rgba(244,132,95,0.35);
+}
+.start-btn .icon { font-size: 48px; line-height: 1; }
+
+/* ストップボタン */
+.stop-btn {
+  width: 150px; height: 150px; font-size: 17px; gap: 2px;
+  background: linear-gradient(145deg, #FF8A80, #EF5350);
+  box-shadow: 0 10px 32px rgba(239,83,80,0.3);
+}
+.stop-btn .icon { font-size: 48px; line-height: 1; }
+
+/* ===== 哺乳瓶ピッカー ===== */
+.bottle-section { display: none; align-items: center; flex-direction: column; margin-bottom: 16px; }
+.bottle-section.active { display: flex; }
+.amount-big {
+  font-size: 40px; font-weight: 800; color: var(--peach);
+  margin-bottom: 4px;
+}
+.picker-wrap {
+  position: relative; height: 156px; width: 180px; overflow: hidden;
+}
+.picker-hl {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 140px; height: 44px;
+  background: var(--peach-light);
+  border-radius: 14px;
+  pointer-events: none; z-index: 1;
+}
+.picker-scroll {
+  height: 100%; overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.picker-scroll::-webkit-scrollbar { display: none; }
+.picker-item {
+  height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  scroll-snap-align: center;
+  font-size: 17px; font-weight: 400;
+  color: rgba(109,76,65,0.25);
+  transition: all 0.1s;
+}
+.picker-item.selected {
+  font-size: 22px; font-weight: 700; color: var(--peach);
+}
+
+/* ===== 記録エリア ===== */
+.records-area {
+  flex: 1; overflow-y: auto;
+  border-top: 1px solid rgba(109,76,65,0.08);
+  margin-top: 4px;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+.date-header {
+  padding: 14px 20px 6px;
+  font-size: 12px; font-weight: 700;
+  color: var(--brown-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.record-item {
+  display: flex; align-items: center;
+  margin: 2px 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: 14px;
+}
+.rec-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.rec-icon.breast { background: var(--pink-light); }
+.rec-icon.formula { background: var(--orange-light); }
+.rec-info { flex: 1; margin-left: 10px; }
+.rec-title { font-size: 14px; font-weight: 600; }
+.rec-sub { font-size: 11px; color: var(--brown-light); margin-top: 1px; }
+.rec-time { font-size: 13px; font-weight: 600; color: var(--brown-light); }
+
+.empty-state {
+  text-align: center; padding: 40px 20px;
+  color: rgba(109,76,65,0.3);
+}
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
+.empty-state p { font-size: 13px; }
+
+/* ===== 記録完了トースト ===== */
+.toast {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+  background: var(--green); color: white;
+  padding: 10px 24px; border-radius: 20px;
+  font-size: 14px; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(102,187,106,0.35);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s, top 0.3s;
+  z-index: 200;
+  max-width: 90%;
+}
+.toast.show { opacity: 1; top: 70px; }
+
+/* ===== 設定シート ===== */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.25); z-index: 100;
+}
+.overlay.active { display: block; }
+.settings-sheet {
+  position: fixed; bottom: -300px; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: var(--bg);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 101;
+  transition: bottom 0.3s ease;
+}
+.settings-sheet.active { bottom: 0; }
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: rgba(109,76,65,0.2);
+  border-radius: 2px;
+  margin: 0 auto 18px;
+}
+.sheet-title { font-size: 15px; font-weight: 700; }
+.sheet-sub { font-size: 12px; color: var(--brown-light); margin-top: 3px; }
+.s-option {
+  display: flex; align-items: center;
+  padding: 13px 14px; border-radius: 14px;
+  background: var(--card); margin-top: 10px;
+  cursor: pointer; border: 2px solid transparent;
+  transition: all 0.2s;
+}
+.s-option.sel { background: var(--peach-light); border-color: var(--peach); }
+.s-option .s-icon { font-size: 18px; margin-right: 10px; }
+.s-option .s-label { flex: 1; font-size: 14px; font-weight: 500; }
+.s-option.sel .s-label { font-weight: 700; color: var(--peach); }
+.s-option .s-check { display: none; font-size: 18px; color: var(--peach); }
+.s-option.sel .s-check { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>授乳きろく</h1>
+  <button class="settings-btn" onclick="openSettings()" aria-label="設定">⚙</button>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" id="tab-breast" onclick="switchTab('breast')">
+    <span>❤️</span><span>母乳</span>
+  </button>
+  <button class="tab" id="tab-formula" onclick="switchTab('formula')">
+    <span>🍼</span><span>ミルク</span>
+  </button>
+</div>
+
+<!-- ===== 操作エリア ===== -->
+<div class="action-area">
+
+  <!-- 母乳 -->
+  <div class="view active" id="view-breast">
+    <div class="timer" id="b-timer">00:00</div>
+    <div class="status-label" id="b-status"></div>
+
+    <div id="b-idle">
+      <div class="side-buttons">
+        <button class="circle-btn side-btn left" onclick="startBreast('left')">
+          <span class="arrow">←</span><span>ひだり</span>
+        </button>
+        <button class="circle-btn side-btn right" onclick="startBreast('right')">
+          <span class="arrow">→</span><span>みぎ</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="b-running" style="display:none">
+      <button class="circle-btn stop-btn" onclick="stopBreast()">
+        <span class="icon">■</span><span>ストップ</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 粉ミルク -->
+  <div class="view" id="view-formula">
+    <div class="timer" id="f-timer">00:00</div>
+    <div class="status-label" id="f-status"></div>
+
+    <div id="f-idle">
+      <button class="circle-btn start-btn" onclick="startFormula()">
+        <span class="icon">▶</span><span>スタート</span>
+      </button>
+    </div>
+
+    <div id="f-running" style="display:none">
+      <div class="bottle-section active">
+        <div class="amount-big" id="amount-display">100ml</div>
+        <div class="picker-wrap">
+          <div class="picker-hl"></div>
+          <div class="picker-scroll" id="picker-scroll"></div>
+        </div>
+      </div>
+      <button class="circle-btn stop-btn" onclick="stopFormula()">
+        <span class="icon">■</span><span>ストップ</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 記録一覧 ===== -->
+<div class="records-area" id="records-area">
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">📝</div>
+    <p>ボタンを押して記録をはじめましょう</p>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<!-- 設定 -->
+<div class="overlay" id="overlay" onclick="closeSettings()"></div>
+<div class="settings-sheet" id="settings-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">デフォルトのタブ</div>
+  <div class="sheet-sub">アプリを開いた時に表示するタブ</div>
+  <div class="s-option sel" id="opt-breast" onclick="setDefault('breast')">
+    <span class="s-icon">❤️</span>
+    <span class="s-label">母乳</span>
+    <span class="s-check">✓</span>
+  </div>
+  <div class="s-option" id="opt-formula" onclick="setDefault('formula')">
+    <span class="s-icon">🍼</span>
+    <span class="s-label">ミルク</span>
+    <span class="s-check">✓</span>
+  </div>
+</div>
+
+<script>
+// ===== State =====
+let currentTab = 'breast';
+let iv = null;
+let secs = 0;
+let startedAt = null;
+let side = null;
+let ml = 100;
+let records = JSON.parse(localStorage.getItem('milkRecords') || '[]');
+
+// ===== Tab =====
+function switchTab(t) {
+  if (iv) return; // 計測中は切替不可（alertなし、静かに無視）
+  currentTab = t;
+  document.getElementById('tab-breast').classList.toggle('active', t==='breast');
+  document.getElementById('tab-formula').classList.toggle('active', t==='formula');
+  document.getElementById('view-breast').classList.toggle('active', t==='breast');
+  document.getElementById('view-formula').classList.toggle('active', t==='formula');
+}
+
+// ===== Timer =====
+function tick(id) {
+  secs++;
+  const m = String(Math.floor(secs/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  document.getElementById(id).textContent = `${m}:${s}`;
+}
+
+function startTimer(id) {
+  secs = 0; startedAt = new Date();
+  document.getElementById(id).textContent = '00:00';
+  document.getElementById(id).classList.add('running');
+  iv = setInterval(() => tick(id), 1000);
+}
+
+function stopTimer(id) {
+  clearInterval(iv); iv = null;
+  document.getElementById(id).classList.remove('running');
+}
+
+// ===== Breast =====
+function startBreast(s) {
+  side = s;
+  hide('b-idle'); show('b-running');
+  document.getElementById('b-status').innerHTML =
+    `<span class="pulse-dot"></span>${s==='left'?'ひだり':'みぎ'}で授乳中`;
+  startTimer('b-timer');
+}
+
+function stopBreast() {
+  stopTimer('b-timer');
+  const r = { id: Date.now()+'', type:'breastMilk', side, durationSeconds:secs, startedAt:startedAt.toISOString() };
+  records.unshift(r);
+  save(); render();
+  showToast(`${side==='left'?'ひだり':'みぎ'} ${fmtDur(secs)} 記録しました`);
+  hide('b-running'); show('b-idle');
+  document.getElementById('b-status').innerHTML = '';
+  document.getElementById('b-timer').textContent = '00:00';
+  side = null;
+}
+
+// ===== Formula =====
+function startFormula() {
+  hide('f-idle'); show('f-running');
+  document.getElementById('f-status').innerHTML =
+    '<span class="pulse-dot"></span>ミルク中';
+  startTimer('f-timer');
+  initPicker();
+}
+
+function stopFormula() {
+  stopTimer('f-timer');
+  const r = { id: Date.now()+'', type:'formula', amountMl:ml, durationSeconds:secs, startedAt:startedAt.toISOString() };
+  records.unshift(r);
+  save(); render();
+  showToast(`ミルク ${ml}ml ${fmtDur(secs)} 記録しました`);
+  hide('f-running'); show('f-idle');
+  document.getElementById('f-status').innerHTML = '';
+  document.getElementById('f-timer').textContent = '00:00';
+}
+
+// ===== Picker =====
+function initPicker() {
+  const sc = document.getElementById('picker-scroll');
+  sc.innerHTML = '';
+  // spacers top
+  for(let i=0;i<2;i++){ const d=document.createElement('div'); d.className='picker-item'; sc.appendChild(d); }
+  for(let v=0;v<=300;v+=10){
+    const d=document.createElement('div');
+    d.className='picker-item'; d.dataset.ml=v; d.textContent=v+'ml';
+    sc.appendChild(d);
+  }
+  // spacers bottom
+  for(let i=0;i<2;i++){ const d=document.createElement('div'); d.className='picker-item'; sc.appendChild(d); }
+  sc.scrollTop = (ml/10)*44;
+  sc.onscroll = () => {
+    const idx = Math.round((sc.scrollTop+78)/44)-2;
+    const v = Math.max(0,Math.min(300,idx*10));
+    if(v!==ml){ ml=v; document.getElementById('amount-display').textContent=v+'ml'; updPicker(); }
+  };
+  updPicker();
+}
+
+function updPicker() {
+  document.querySelectorAll('#picker-scroll .picker-item[data-ml]').forEach(el => {
+    el.classList.toggle('selected', +el.dataset.ml===ml);
+  });
+}
+
+// ===== Records =====
+function save() { localStorage.setItem('milkRecords', JSON.stringify(records)); }
+
+function render() {
+  const area = document.getElementById('records-area');
+  const empty = document.getElementById('empty-state');
+  area.querySelectorAll('.date-header,.record-item').forEach(e=>e.remove());
+
+  if(!records.length){ empty.style.display=''; return; }
+  empty.style.display='none';
+
+  const groups = {};
+  records.forEach(r => {
+    const d = new Date(r.startedAt);
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    (groups[k]||(groups[k]=[])).push(r);
+  });
+
+  Object.entries(groups).forEach(([k,rs]) => {
+    const h = document.createElement('div');
+    h.className='date-header'; h.textContent=fmtDate(k); area.appendChild(h);
+    rs.forEach(r => {
+      const el = document.createElement('div');
+      el.className='record-item';
+      const isB = r.type==='breastMilk';
+      const d = new Date(r.startedAt);
+      const t = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      el.innerHTML = `
+        <div class="rec-icon ${isB?'breast':'formula'}">${isB?'❤️':'🍼'}</div>
+        <div class="rec-info">
+          <div class="rec-title">${isB?`母乳（${r.side==='left'?'ひだり':'みぎ'}）`:`ミルク ${r.amountMl}ml`}</div>
+          <div class="rec-sub">${fmtDur(r.durationSeconds)}</div>
+        </div>
+        <div class="rec-time">${t}</div>`;
+      area.appendChild(el);
+    });
+  });
+}
+
+function fmtDur(s) {
+  const m=Math.floor(s/60), sec=s%60;
+  if(m>0) return sec>0?`${m}分${sec}秒`:`${m}分`;
+  return `${sec}秒`;
+}
+
+function fmtDate(k) {
+  const d=new Date(k+'T00:00:00'), now=new Date();
+  now.setHours(0,0,0,0);
+  const diff=(now-d)/(864e5);
+  if(diff===0) return 'きょう';
+  if(diff===1) return 'きのう';
+  const w=['日','月','火','水','木','金','土'];
+  return `${d.getMonth()+1}月${d.getDate()}日（${w[d.getDay()]}）`;
+}
+
+// ===== Toast =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ===== Settings =====
+function openSettings() {
+  document.getElementById('overlay').classList.add('active');
+  document.getElementById('settings-sheet').classList.add('active');
+}
+function closeSettings() {
+  document.getElementById('overlay').classList.remove('active');
+  document.getElementById('settings-sheet').classList.remove('active');
+}
+function setDefault(t) {
+  document.getElementById('opt-breast').classList.toggle('sel',t==='breast');
+  document.getElementById('opt-formula').classList.toggle('sel',t==='formula');
+  closeSettings();
+}
+
+// ===== Util =====
+function hide(id){ document.getElementById(id).style.display='none'; }
+function show(id){
+  const el=document.getElementById(id);
+  el.style.display='flex'; el.style.flexDirection='column'; el.style.alignItems='center';
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
