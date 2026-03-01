@@ -510,11 +510,6 @@ body {
               <stop offset="0%" stop-color="#FFF8E8"/>
               <stop offset="100%" stop-color="#FFE4B5"/>
             </linearGradient>
-            <!-- 乳首グラデーション -->
-            <radialGradient id="nipple-grad" cx="0.5" cy="0.3" r="0.6">
-              <stop offset="0%" stop-color="#F5D4A8"/>
-              <stop offset="100%" stop-color="#E8BA82"/>
-            </radialGradient>
             <!-- ボトルガラス -->
             <linearGradient id="glass-grad" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stop-color="rgba(255,255,255,0.92)"/>
@@ -527,32 +522,23 @@ body {
             </clipPath>
           </defs>
 
-          <!-- ===== 乳首（ピジョン母乳実感風） ===== -->
-          <!-- 乳首本体：丸みのあるドーム型、先端がやや膨らむおっぱい型 -->
-          <path d="M78 48
-                   C78 42, 85 28, 92 18
-                   C96 12, 102 4, 110 2
-                   C118 4, 124 12, 128 18
-                   C135 28, 142 42, 142 48
-                   L142 58 L78 58 Z"
-                fill="url(#nipple-grad)" stroke="#DCAA70" stroke-width="1"/>
-          <!-- 乳首先端の丸み（吸い口部分） -->
-          <ellipse cx="110" cy="4" rx="10" ry="4" fill="#ECC48E" opacity="0.6"/>
-          <!-- 乳首の柔らかさを表現する内側カーブ -->
-          <path d="M88 40 C92 32, 100 22, 110 18 C120 22, 128 32, 132 40"
-                stroke="#DCAA70" stroke-width="0.6" fill="none" opacity="0.4"/>
-          <!-- ラッチオンライン風の段差 -->
-          <path d="M82 46 C90 44, 100 43, 110 43 C120 43, 130 44, 138 46"
-                stroke="#D4A060" stroke-width="0.8" fill="none" opacity="0.5"/>
+          <!-- ===== キャップ（フタ） ===== -->
+          <path d="M75 42 C75 30, 85 22, 110 22 C135 22, 145 30, 145 42 L145 58 L75 58 Z"
+                fill="#C8DFF0" stroke="#A0C4DD" stroke-width="1" rx="6"/>
+          <!-- キャップ上部の丸み -->
+          <path d="M80 42 C80 33, 90 26, 110 26 C130 26, 140 33, 140 42"
+                stroke="#A0C4DD" stroke-width="0.5" fill="none" opacity="0.4"/>
+          <!-- キャップ光沢 -->
+          <path d="M85 34 C88 30, 95 27, 105 27"
+                stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.3"/>
 
-          <!-- ===== キャップリング（ネジ部分） ===== -->
-          <rect x="70" y="56" width="80" height="18" rx="5" fill="#C8DFF0" stroke="#A0C4DD" stroke-width="1"/>
-          <!-- ネジ山の溝 -->
-          <line x1="76" y1="62" x2="144" y2="62" stroke="#A0C4DD" stroke-width="0.5" opacity="0.4"/>
-          <line x1="76" y1="67" x2="144" y2="67" stroke="#A0C4DD" stroke-width="0.5" opacity="0.3"/>
+          <!-- ===== リング（ネジ部分） ===== -->
+          <rect x="70" y="56" width="80" height="16" rx="4" fill="#B8D4E8" stroke="#9CBDD6" stroke-width="1"/>
+          <line x1="76" y1="62" x2="144" y2="62" stroke="#9CBDD6" stroke-width="0.5" opacity="0.35"/>
+          <line x1="76" y1="66" x2="144" y2="66" stroke="#9CBDD6" stroke-width="0.5" opacity="0.25"/>
 
           <!-- ===== ネック（首部分：広口） ===== -->
-          <path d="M70 74 L52 88 L168 88 L150 74 Z"
+          <path d="M70 72 L52 88 L168 88 L150 72 Z"
                 fill="url(#glass-grad)" stroke="#D0D0D0" stroke-width="1"/>
 
           <!-- ===== ボトル本体（丸みのある広口ボトル） ===== -->
@@ -788,10 +774,10 @@ function drawScales() {
     const isMajor = v % 50 === 0;
     const lineW = isMajor ? 22 : 12;
 
-    // right side scale lines
+    // left side scale lines
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', BODY_R - lineW);
-    line.setAttribute('x2', BODY_R);
+    line.setAttribute('x1', BODY_L);
+    line.setAttribute('x2', BODY_L + lineW);
     line.setAttribute('y1', y);
     line.setAttribute('y2', y);
     line.setAttribute('class', 'scale-line');
@@ -800,9 +786,9 @@ function drawScales() {
 
     if (isMajor && v > 0) {
       const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      txt.setAttribute('x', BODY_R - lineW - 4);
+      txt.setAttribute('x', BODY_L + lineW + 5);
       txt.setAttribute('y', y + 3.5);
-      txt.setAttribute('text-anchor', 'end');
+      txt.setAttribute('text-anchor', 'start');
       txt.setAttribute('class', 'scale-label');
       txt.textContent = v;
       g.appendChild(txt);
