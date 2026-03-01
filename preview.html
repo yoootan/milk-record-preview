@@ -239,42 +239,74 @@ body {
 }
 .stop-btn .icon { font-size: 48px; line-height: 1; }
 
-/* ===== 粉ミルク：ピッカー直表示 ===== */
-.formula-section {
+/* ===== 哺乳瓶UI ===== */
+.bottle-ui {
   display: flex; flex-direction: column; align-items: center; width: 100%;
+  padding-top: 4px;
 }
-.formula-label {
-  font-size: 13px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px;
+.bottle-amount {
+  font-size: 42px; font-weight: 800; color: var(--accent);
+  transition: color 0.35s, transform 0.2s;
+  margin-bottom: 2px;
 }
-.amount-big {
-  font-size: 44px; font-weight: 800; color: var(--accent); margin-bottom: 2px;
-  transition: color 0.35s;
+.bottle-amount.pop { animation: amtPop 0.25s ease; }
+@keyframes amtPop { 0%{transform:scale(1)} 40%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+.bottle-container {
+  position: relative;
+  width: 140px;
+  height: 280px;
+  margin: 4px 0 6px;
+  touch-action: none;
+  cursor: pointer;
 }
-.picker-wrap {
-  position: relative; height: 176px; width: 200px; overflow: hidden;
+
+/* 哺乳瓶本体（SVG） */
+.bottle-svg {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.08));
 }
-.picker-hl {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-  width: 150px; height: 48px;
-  background: var(--accent-light); border-radius: 14px;
-  pointer-events: none; z-index: 1;
-  transition: background 0.35s;
+
+/* ミルク液面 */
+.milk-fill {
+  transition: y 0.15s ease, height 0.15s ease;
 }
-.picker-scroll {
-  height: 100%; overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+
+/* 泡アニメーション */
+.bubble {
+  animation: bubbleUp 2s ease-in infinite;
+  opacity: 0;
 }
-.picker-scroll::-webkit-scrollbar { display: none; }
-.picker-item {
-  height: 48px; display: flex; align-items: center; justify-content: center;
-  scroll-snap-align: center;
-  font-size: 18px; font-weight: 400; color: var(--picker-item);
-  transition: all 0.1s;
+@keyframes bubbleUp {
+  0% { opacity: 0; transform: translateY(0) scale(0.5); }
+  20% { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-40px) scale(1); }
 }
-.picker-item.selected { font-size: 24px; font-weight: 700; color: var(--accent); }
-.formula-hint {
-  font-size: 11px; color: var(--text-sub); margin-top: 6px; opacity: 0.7;
+
+/* 目盛りラベル */
+.scale-label {
+  font-size: 9px; font-weight: 700;
+  fill: var(--text-sub); opacity: 0.7;
+}
+.scale-line {
+  stroke: var(--text-sub); opacity: 0.25;
+}
+
+/* 波アニメーション */
+.milk-wave {
+  animation: waveMove 3s ease-in-out infinite;
+}
+@keyframes waveMove {
+  0%,100% { transform: translateX(0); }
+  50% { transform: translateX(-8px); }
+}
+
+.bottle-hint {
+  font-size: 11px; color: var(--text-sub); opacity: 0.6;
+  margin-top: 2px;
+}
+.bottle-hint.saving {
+  color: var(--accent); opacity: 1; font-weight: 700;
 }
 
 /* ===== 記録保存フラッシュ ===== */
@@ -466,16 +498,57 @@ body {
     </div>
   </div>
 
-  <!-- 粉ミルクモード（スクロールで即記録） -->
+  <!-- 粉ミルクモード（哺乳瓶UI） -->
   <div class="view" id="view-formula">
-    <div class="formula-section">
-      <div class="formula-label">スクロールで量をえらぶ</div>
-      <div class="amount-big" id="amount-display">100ml</div>
-      <div class="picker-wrap">
-        <div class="picker-hl"></div>
-        <div class="picker-scroll" id="picker-scroll"></div>
+    <div class="bottle-ui">
+      <div class="bottle-amount" id="bottle-amount">0ml</div>
+      <div class="bottle-container" id="bottle-container">
+        <svg class="bottle-svg" viewBox="0 0 140 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 乳首 -->
+          <path d="M52 8 C52 3, 58 0, 70 0 C82 0, 88 3, 88 8 L85 28 L55 28 Z"
+                fill="#F0C8A0" stroke="#E0B890" stroke-width="1"/>
+          <ellipse cx="70" cy="10" rx="8" ry="3" fill="#E8BC8C" opacity="0.5"/>
+
+          <!-- キャップリング -->
+          <rect x="46" y="26" width="48" height="14" rx="4" fill="#B0D4F1" stroke="#8BBDE0" stroke-width="1"/>
+          <line x1="50" y1="33" x2="90" y2="33" stroke="#8BBDE0" stroke-width="0.5" opacity="0.5"/>
+
+          <!-- ボトル本体 -->
+          <path d="M46 40 L42 60 L42 248 C42 260, 50 268, 70 268 C90 268, 98 260, 98 248 L98 60 L94 40 Z"
+                fill="rgba(255,255,255,0.85)" stroke="#D0D0D0" stroke-width="1.2"/>
+
+          <!-- ミルク -->
+          <defs>
+            <clipPath id="bottle-clip">
+              <path d="M43 60 L43 248 C43 259, 51 267, 70 267 C89 267, 97 259, 97 248 L97 60 Z"/>
+            </clipPath>
+            <linearGradient id="milk-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFF5E0"/>
+              <stop offset="100%" stop-color="#FFE4B5"/>
+            </linearGradient>
+          </defs>
+          <g clip-path="url(#bottle-clip)">
+            <!-- ミルク本体 -->
+            <rect id="milk-rect" x="43" y="267" width="54" height="0"
+                  fill="url(#milk-grad)"/>
+            <!-- 波 -->
+            <g id="milk-wave-g" class="milk-wave">
+              <path id="milk-wave-path" d="" fill="#FFF5E0" opacity="0.5"/>
+            </g>
+            <!-- 泡 -->
+            <circle class="bubble" cx="58" cy="200" r="2.5" fill="white" opacity="0" style="animation-delay:0s"/>
+            <circle class="bubble" cx="75" cy="210" r="2" fill="white" opacity="0" style="animation-delay:0.7s"/>
+            <circle class="bubble" cx="65" cy="220" r="1.8" fill="white" opacity="0" style="animation-delay:1.3s"/>
+          </g>
+
+          <!-- 目盛り -->
+          <g id="bottle-scales"></g>
+
+          <!-- ボトル光沢 -->
+          <rect x="48" y="55" width="6" height="190" rx="3" fill="white" opacity="0.18"/>
+        </svg>
       </div>
-      <div class="formula-hint" id="formula-hint">指をはなすと記録されます</div>
+      <div class="bottle-hint" id="bottle-hint">哺乳瓶をタッチして量をえらぶ</div>
     </div>
   </div>
 </div>
@@ -539,7 +612,6 @@ let records = JSON.parse(localStorage.getItem('milkRecords') || '[]');
 let currentTheme = localStorage.getItem('theme') || 'orange';
 let nightMode = localStorage.getItem('nightMode') === 'true';
 let userTheme = localStorage.getItem('userTheme') || 'orange';
-let scrollTimeout = null;
 
 // ===== Theme =====
 function setTheme(t, save = true) {
@@ -596,7 +668,7 @@ function switchTab(t) {
   document.getElementById('tab-formula').classList.toggle('active', t === 'formula');
   document.getElementById('view-breast').classList.toggle('active', t === 'breast');
   document.getElementById('view-formula').classList.toggle('active', t === 'formula');
-  if (t === 'formula') initPicker();
+  if (t === 'formula') { initBottle(); lastRecordedMl = -1; }
 }
 
 // ===== Timer =====
@@ -636,52 +708,179 @@ function stopBreast() {
   side = null;
 }
 
-// ===== Formula (scroll to record) =====
-function initPicker() {
-  const sc = document.getElementById('picker-scroll');
-  sc.innerHTML = '';
-  for (let i = 0; i < 2; i++) { const d = document.createElement('div'); d.className = 'picker-item'; sc.appendChild(d); }
-  for (let v = 0; v <= 300; v += 10) {
-    const d = document.createElement('div');
-    d.className = 'picker-item'; d.dataset.ml = v; d.textContent = v + 'ml';
-    sc.appendChild(d);
-  }
-  for (let i = 0; i < 2; i++) { const d = document.createElement('div'); d.className = 'picker-item'; sc.appendChild(d); }
-  sc.scrollTop = (ml / 10) * 48;
-  updPicker();
+// ===== Bottle UI =====
+const BOTTLE_MAX = 300;
+const BOTTLE_TOP = 60;   // SVG y: top of fill area
+const BOTTLE_BOT = 267;  // SVG y: bottom of fill area
+const BOTTLE_H = BOTTLE_BOT - BOTTLE_TOP; // fillable height
 
-  // scroll → 指を離してスクロールが止まったら記録
-  let lastMl = ml;
-  sc.onscroll = () => {
-    const idx = Math.round((sc.scrollTop + 88) / 48) - 2;
-    const v = Math.max(0, Math.min(300, idx * 10));
-    if (v !== ml) { ml = v; document.getElementById('amount-display').textContent = v + 'ml'; updPicker(); }
-    // debounce: スクロール停止を検知
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-      if (ml !== lastMl && ml > 0) {
-        lastMl = ml;
-        recordFormula();
-      }
-    }, 600);
-  };
+let isTouching = false;
+let lastRecordedMl = -1;
+
+function initBottle() {
+  drawScales();
+  setMilkLevel(0);
+  const container = document.getElementById('bottle-container');
+
+  // Touch events
+  container.addEventListener('touchstart', onBottleTouchStart, { passive: false });
+  container.addEventListener('touchmove', onBottleTouchMove, { passive: false });
+  container.addEventListener('touchend', onBottleTouchEnd);
+  container.addEventListener('touchcancel', onBottleTouchEnd);
+
+  // Mouse events (for desktop preview)
+  container.addEventListener('mousedown', onBottleMouseDown);
+  container.addEventListener('mousemove', onBottleMouseMove);
+  container.addEventListener('mouseup', onBottleMouseUp);
+  container.addEventListener('mouseleave', onBottleMouseUp);
 }
 
-function recordFormula() {
+function drawScales() {
+  const g = document.getElementById('bottle-scales');
+  g.innerHTML = '';
+  for (let v = 0; v <= BOTTLE_MAX; v += 10) {
+    const pct = v / BOTTLE_MAX;
+    const y = BOTTLE_BOT - pct * BOTTLE_H;
+    const isMajor = v % 50 === 0;
+    const lineW = isMajor ? 18 : 10;
+
+    // right side scale lines
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', 97 - lineW);
+    line.setAttribute('x2', 97);
+    line.setAttribute('y1', y);
+    line.setAttribute('y2', y);
+    line.setAttribute('class', 'scale-line');
+    line.setAttribute('stroke-width', isMajor ? '1' : '0.5');
+    g.appendChild(line);
+
+    if (isMajor && v > 0) {
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', 97 - lineW - 3);
+      txt.setAttribute('y', y + 3);
+      txt.setAttribute('text-anchor', 'end');
+      txt.setAttribute('class', 'scale-label');
+      txt.textContent = v;
+      g.appendChild(txt);
+    }
+  }
+}
+
+function setMilkLevel(amount) {
+  ml = Math.max(0, Math.min(BOTTLE_MAX, Math.round(amount / 10) * 10));
+  const pct = ml / BOTTLE_MAX;
+  const fillH = pct * BOTTLE_H;
+  const fillY = BOTTLE_BOT - fillH;
+
+  // Milk rect
+  const rect = document.getElementById('milk-rect');
+  rect.setAttribute('y', fillY);
+  rect.setAttribute('height', fillH);
+
+  // Wave path at the top of milk
+  const wPath = document.getElementById('milk-wave-path');
+  if (ml > 0) {
+    const wy = fillY;
+    wPath.setAttribute('d',
+      `M43 ${wy+4} Q55 ${wy-3}, 70 ${wy+2} Q85 ${wy+7}, 97 ${wy+1} L97 ${wy+8} L43 ${wy+8} Z`
+    );
+  } else {
+    wPath.setAttribute('d', '');
+  }
+
+  // Bubble positions
+  document.querySelectorAll('.bubble').forEach((b, i) => {
+    b.setAttribute('cy', fillY + 10 + i * 8);
+    b.style.display = ml > 20 ? '' : 'none';
+  });
+
+  // Amount text
+  const amtEl = document.getElementById('bottle-amount');
+  amtEl.textContent = ml + 'ml';
+}
+
+function yToMl(clientY) {
+  const container = document.getElementById('bottle-container');
+  const rect = container.getBoundingClientRect();
+  const svgH = rect.height;
+  const relY = clientY - rect.top;
+
+  // Map SVG coordinates
+  const svgY = (relY / svgH) * 280;
+  const pct = 1 - (svgY - BOTTLE_TOP) / BOTTLE_H;
+  return Math.max(0, Math.min(BOTTLE_MAX, Math.round(pct * BOTTLE_MAX / 10) * 10));
+}
+
+function onBottleTouchStart(e) {
+  e.preventDefault();
+  isTouching = true;
+  const touch = e.touches[0];
+  setMilkLevel(yToMl(touch.clientY));
+  updateHint('touching');
+}
+
+function onBottleTouchMove(e) {
+  e.preventDefault();
+  if (!isTouching) return;
+  const touch = e.touches[0];
+  setMilkLevel(yToMl(touch.clientY));
+}
+
+function onBottleTouchEnd() {
+  if (!isTouching) return;
+  isTouching = false;
+  saveBottle();
+}
+
+function onBottleMouseDown(e) {
+  isTouching = true;
+  setMilkLevel(yToMl(e.clientY));
+  updateHint('touching');
+}
+
+function onBottleMouseMove(e) {
+  if (!isTouching) return;
+  setMilkLevel(yToMl(e.clientY));
+}
+
+function onBottleMouseUp() {
+  if (!isTouching) return;
+  isTouching = false;
+  saveBottle();
+}
+
+function saveBottle() {
+  if (ml <= 0) {
+    updateHint('idle');
+    return;
+  }
+  if (ml === lastRecordedMl) {
+    updateHint('idle');
+    return;
+  }
+  lastRecordedMl = ml;
   const r = { id: Date.now() + '', type: 'formula', amountMl: ml, durationSeconds: 0, startedAt: new Date().toISOString() };
   records.unshift(r); save(); render();
   showToast(`ミルク ${ml}ml 記録しました`);
-  // フラッシュ
-  const el = document.getElementById('amount-display');
-  el.classList.remove('saved-flash');
-  void el.offsetWidth;
-  el.classList.add('saved-flash');
+
+  const amtEl = document.getElementById('bottle-amount');
+  amtEl.classList.remove('pop'); void amtEl.offsetWidth; amtEl.classList.add('pop');
+  updateHint('saved');
+  setTimeout(() => updateHint('idle'), 1500);
 }
 
-function updPicker() {
-  document.querySelectorAll('#picker-scroll .picker-item[data-ml]').forEach(el => {
-    el.classList.toggle('selected', +el.dataset.ml === ml);
-  });
+function updateHint(state) {
+  const hint = document.getElementById('bottle-hint');
+  if (state === 'touching') {
+    hint.textContent = '指をはなすと記録';
+    hint.className = 'bottle-hint saving';
+  } else if (state === 'saved') {
+    hint.textContent = '✓ 記録しました！';
+    hint.className = 'bottle-hint saving';
+  } else {
+    hint.textContent = '哺乳瓶をタッチして量をえらぶ';
+    hint.className = 'bottle-hint';
+  }
 }
 
 // ===== Records =====
@@ -771,8 +970,8 @@ updateLiveCount();
 setInterval(updateLiveCount, 8000);
 render();
 
-// ミルクタブ用ピッカー初期化（初回表示用にも）
-setTimeout(() => { if (currentTab === 'formula') initPicker(); }, 100);
+// 哺乳瓶初期化
+setTimeout(() => { if (currentTab === 'formula') initBottle(); }, 100);
 </script>
 </body>
 </html>
