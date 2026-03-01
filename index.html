@@ -254,8 +254,8 @@ body {
 
 .bottle-container {
   position: relative;
-  width: 200px;
-  height: 340px;
+  width: 220px;
+  height: 320px;
   margin: 4px 0 6px;
   touch-action: none;
   cursor: pointer;
@@ -503,101 +503,75 @@ body {
     <div class="bottle-ui">
       <div class="bottle-amount" id="bottle-amount">0ml</div>
       <div class="bottle-container" id="bottle-container">
-        <svg class="bottle-svg" viewBox="0 0 200 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg class="bottle-svg" viewBox="0 0 220 320" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
+            <!-- ミルク塗りつぶし -->
             <linearGradient id="milk-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#FFF8E6"/>
-              <stop offset="100%" stop-color="#FBECC8"/>
+              <stop offset="0%" stop-color="#FFF8E8"/>
+              <stop offset="100%" stop-color="#FFE4B5"/>
             </linearGradient>
+            <!-- ボトルガラス -->
             <linearGradient id="glass-grad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="rgba(245,247,250,0.95)"/>
-              <stop offset="35%" stop-color="rgba(255,255,255,0.98)"/>
-              <stop offset="100%" stop-color="rgba(240,243,248,0.92)"/>
+              <stop offset="0%" stop-color="rgba(255,255,255,0.92)"/>
+              <stop offset="40%" stop-color="rgba(255,255,255,0.97)"/>
+              <stop offset="100%" stop-color="rgba(240,245,250,0.90)"/>
             </linearGradient>
+            <!-- ミルク領域クリップ -->
             <clipPath id="bottle-clip">
-              <path d="M50 120
-                       C38 130, 28 155, 28 175
-                       L28 320
-                       C28 340, 48 355, 100 355
-                       C152 355, 172 340, 172 320
-                       L172 175
-                       C172 155, 162 130, 150 120 Z"/>
+              <path d="M52 88 C42 95, 35 115, 35 135 L35 275 C35 292, 55 305, 110 305 C165 305, 185 292, 185 275 L185 135 C185 115, 178 95, 168 88 Z"/>
             </clipPath>
           </defs>
 
-          <!-- ===== 乳首（白いシリコン、ピジョン母乳実感風） ===== -->
-          <!-- 乳首本体：丸みのあるドーム、先端がすぼまる -->
-          <path d="M82 58
-                   C82 48, 86 34, 92 22
-                   C95 16, 98 10, 100 6
-                   C102 10, 105 16, 108 22
-                   C114 34, 118 48, 118 58 Z"
-                fill="#F0F0F0" stroke="#DCDCDC" stroke-width="0.8"/>
-          <!-- 先端の丸み -->
-          <ellipse cx="100" cy="6" rx="5" ry="3" fill="#E8E8E8"/>
-          <!-- 乳首の光沢 -->
-          <path d="M90 38 C92 28, 96 18, 99 12"
-                stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
-          <!-- 乳首の左右の膨らみ（付け根付近がやや太い） -->
-          <path d="M84 54 C84 50, 86 42, 90 34"
-                stroke="#DCDCDC" stroke-width="0.5" fill="none" opacity="0.3"/>
-          <path d="M116 54 C116 50, 114 42, 110 34"
-                stroke="#DCDCDC" stroke-width="0.5" fill="none" opacity="0.3"/>
+          <!-- ===== キャップ（フタ） ===== -->
+          <path d="M75 42 C75 30, 85 22, 110 22 C135 22, 145 30, 145 42 L145 58 L75 58 Z"
+                fill="#C8DFF0" stroke="#A0C4DD" stroke-width="1" rx="6"/>
+          <!-- キャップ上部の丸み -->
+          <path d="M80 42 C80 33, 90 26, 110 26 C130 26, 140 33, 140 42"
+                stroke="#A0C4DD" stroke-width="0.5" fill="none" opacity="0.4"/>
+          <!-- キャップ光沢 -->
+          <path d="M85 34 C88 30, 95 27, 105 27"
+                stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.3"/>
 
-          <!-- ===== リング（ネジ部分、白〜薄いグレー） ===== -->
-          <path d="M72 56 L72 72 C72 76, 78 78, 100 78 C122 78, 128 76, 128 72 L128 56
-                   C128 54, 122 52, 100 52 C78 52, 72 54, 72 56 Z"
-                fill="#F5F5F5" stroke="#D8D8D8" stroke-width="0.8"/>
-          <!-- ネジ山 -->
-          <ellipse cx="100" cy="60" rx="28" ry="3" fill="none" stroke="#D8D8D8" stroke-width="0.4" opacity="0.5"/>
-          <ellipse cx="100" cy="66" rx="28" ry="3" fill="none" stroke="#D8D8D8" stroke-width="0.4" opacity="0.35"/>
-          <ellipse cx="100" cy="72" rx="28" ry="3" fill="none" stroke="#D8D8D8" stroke-width="0.4" opacity="0.25"/>
+          <!-- ===== リング（ネジ部分） ===== -->
+          <rect x="70" y="56" width="80" height="16" rx="4" fill="#B8D4E8" stroke="#9CBDD6" stroke-width="1"/>
+          <line x1="76" y1="62" x2="144" y2="62" stroke="#9CBDD6" stroke-width="0.5" opacity="0.35"/>
+          <line x1="76" y1="66" x2="144" y2="66" stroke="#9CBDD6" stroke-width="0.5" opacity="0.25"/>
 
-          <!-- ===== ネック（広口、緩やかに広がる） ===== -->
-          <path d="M72 78
-                   C68 82, 58 95, 52 108
-                   L50 120
-                   L150 120
-                   L148 108
-                   C142 95, 132 82, 128 78 Z"
-                fill="url(#glass-grad)" stroke="#D8D8D8" stroke-width="0.8"/>
-          <!-- ネック光沢 -->
-          <path d="M78 82 C76 90, 70 100, 65 112"
-                stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.2"/>
-
-          <!-- ===== ボトル本体 ===== -->
-          <path d="M50 120
-                   C38 130, 28 155, 28 175
-                   L28 320
-                   C28 340, 48 355, 100 355
-                   C152 355, 172 340, 172 320
-                   L172 175
-                   C172 155, 162 130, 150 120 Z"
+          <!-- ===== ネック（首部分：広口） ===== -->
+          <path d="M70 72 L52 88 L168 88 L150 72 Z"
                 fill="url(#glass-grad)" stroke="#D0D0D0" stroke-width="1"/>
+
+          <!-- ===== ボトル本体（丸みのある広口ボトル） ===== -->
+          <path d="M52 88
+                   C42 95, 35 115, 35 135
+                   L35 275
+                   C35 292, 55 305, 110 305
+                   C165 305, 185 292, 185 275
+                   L185 135
+                   C185 115, 178 95, 168 88 Z"
+                fill="url(#glass-grad)" stroke="#D0D0D0" stroke-width="1.2"/>
 
           <!-- ===== ミルク ===== -->
           <g clip-path="url(#bottle-clip)">
-            <rect id="milk-rect" x="28" y="355" width="144" height="0" fill="url(#milk-grad)"/>
+            <rect id="milk-rect" x="35" y="305" width="150" height="0" fill="url(#milk-grad)"/>
             <g id="milk-wave-g" class="milk-wave">
-              <path id="milk-wave-path" d="" fill="#FFF8E6" opacity="0.4"/>
+              <path id="milk-wave-path" d="" fill="#FFF8E8" opacity="0.45"/>
             </g>
-            <circle class="bubble" cx="70"  cy="280" r="2.5" fill="white" opacity="0" style="animation-delay:0s"/>
-            <circle class="bubble" cx="120" cy="290" r="2"   fill="white" opacity="0" style="animation-delay:0.8s"/>
-            <circle class="bubble" cx="95"  cy="300" r="1.8" fill="white" opacity="0" style="animation-delay:1.5s"/>
-            <circle class="bubble" cx="85"  cy="270" r="1.5" fill="white" opacity="0" style="animation-delay:2.1s"/>
+            <!-- 泡 -->
+            <circle class="bubble" cx="75"  cy="240" r="3"   fill="white" opacity="0" style="animation-delay:0s"/>
+            <circle class="bubble" cx="130" cy="250" r="2.5" fill="white" opacity="0" style="animation-delay:0.8s"/>
+            <circle class="bubble" cx="100" cy="260" r="2"   fill="white" opacity="0" style="animation-delay:1.5s"/>
+            <circle class="bubble" cx="90"  cy="230" r="1.8" fill="white" opacity="0" style="animation-delay:2.1s"/>
           </g>
 
           <!-- ===== 目盛り ===== -->
           <g id="bottle-scales"></g>
 
           <!-- ===== ボトル光沢 ===== -->
-          <path d="M44 140 C40 155, 38 175, 38 195 L38 305 C38 315, 40 325, 44 330"
-                stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.13" fill="none"/>
-          <path d="M50 145 C48 158, 46 175, 46 190 L46 270"
-                stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.1" fill="none"/>
-          <!-- 右側にも薄い光沢 -->
-          <path d="M160 160 L160 300"
-                stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.06" fill="none"/>
+          <path d="M54 100 C50 110, 46 140, 46 160 L46 260 C46 270, 48 275, 50 278"
+                stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.15" fill="none"/>
+          <path d="M60 105 C58 112, 55 130, 55 145 L55 220"
+                stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.12" fill="none"/>
         </svg>
       </div>
       <div class="bottle-hint" id="bottle-hint">哺乳瓶をタッチして量をえらぶ</div>
@@ -761,14 +735,14 @@ function stopBreast() {
 }
 
 // ===== Bottle UI =====
-const BOTTLE_MAX = 240;
-const BOTTLE_TOP = 130;   // SVG y: top of fill area (inside body)
-const BOTTLE_BOT = 350;   // SVG y: bottom of fill area
+const BOTTLE_MAX = 300;
+const BOTTLE_TOP = 95;    // SVG y: top of fill area
+const BOTTLE_BOT = 303;   // SVG y: bottom of fill area
 const BOTTLE_H = BOTTLE_BOT - BOTTLE_TOP;
-const SVG_W = 200;
-const SVG_H = 380;
-const BODY_L = 29;  // bottle body left x
-const BODY_R = 171; // bottle body right x
+const SVG_W = 220;
+const SVG_H = 320;
+const BODY_L = 36;  // bottle body left x
+const BODY_R = 184; // bottle body right x
 
 let isTouching = false;
 let lastRecordedMl = -1;
@@ -806,10 +780,10 @@ function drawScales() {
     const isMid = v % 50 !== 0 && v % 10 === 0;
     const lineW = isMajor ? 20 : 10;
 
-    // left side scale lines
+    // right side scale lines
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', BODY_L + 6);
-    line.setAttribute('x2', BODY_L + 6 + lineW);
+    line.setAttribute('x1', BODY_R - 6 - lineW);
+    line.setAttribute('x2', BODY_R - 6);
     line.setAttribute('y1', y);
     line.setAttribute('y2', y);
     line.setAttribute('class', 'scale-line');
@@ -819,9 +793,9 @@ function drawScales() {
 
     if (isMajor && v > 0) {
       const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      txt.setAttribute('x', BODY_L + 6 + lineW + 4);
+      txt.setAttribute('x', BODY_R - 6 - lineW - 5);
       txt.setAttribute('y', y + 3);
-      txt.setAttribute('text-anchor', 'start');
+      txt.setAttribute('text-anchor', 'end');
       txt.setAttribute('class', 'scale-label');
       txt.textContent = v;
       g.appendChild(txt);
