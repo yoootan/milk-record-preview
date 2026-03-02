@@ -103,6 +103,7 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
           ] else ...[
             _buildStopButton(colors, s),
           ],
+          const SizedBox(height: 24),
         ],
       ),
     );

@@ -150,12 +150,6 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
             decoration: BoxDecoration(
               color: isHighlighted ? chipColor : colors.card,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: isHighlighted
-                    ? chipColor
-                    : chipColor.withValues(alpha: 0.4),
-                width: isHighlighted ? 2.5 : 1.5,
-              ),
               boxShadow: [
                 BoxShadow(
                   color: isHighlighted
