@@ -93,28 +93,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             selectedIndex: _selectedTabIndex,
             onTabChanged: _onTabChanged,
           ),
-          // メインコンテンツ
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _selectedTabIndex == 0
-                ? const BreastMilkView(key: ValueKey('breast'))
-                : const FormulaView(key: ValueKey('formula')),
-          ),
-          const SizedBox(height: 8),
-          // 吐き戻しボタン
-          const SpitUpButton(),
-          const SizedBox(height: 8),
-          // 区切り線
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Divider(
-              color: AppTheme.currentThemeColors.textSub.withValues(alpha: 0.15),
-            ),
-          ),
-          // 記録一覧
-          const Expanded(
+          // スクロール可能なコンテンツ
+          Expanded(
             child: SingleChildScrollView(
-              child: RecordList(),
+              child: Column(
+                children: [
+                  // メインコンテンツ
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _selectedTabIndex == 0
+                        ? const BreastMilkView(key: ValueKey('breast'))
+                        : const FormulaView(key: ValueKey('formula')),
+                  ),
+                  const SizedBox(height: 8),
+                  // 吐き戻しボタン
+                  const SpitUpButton(),
+                  const SizedBox(height: 8),
+                  // 区切り線
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Divider(
+                      color: AppTheme.currentThemeColors.textSub.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  // 記録一覧
+                  const RecordList(),
+                ],
+              ),
             ),
           ),
         ],
