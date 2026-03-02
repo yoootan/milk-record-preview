@@ -95,8 +95,10 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
     final s = ref.read(stringsProvider);
     final center = _getTriggerCenter();
 
-    return Stack(
-      children: List.generate(_values.length, (i) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: List.generate(_values.length, (i) {
         final value = _values[i];
         final angle = _angles[i];
         final delay = i * 0.10;
@@ -109,6 +111,7 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
           colors: colors,
         );
       }),
+      ),
     );
   }
 
