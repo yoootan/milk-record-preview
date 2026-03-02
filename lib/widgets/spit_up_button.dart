@@ -18,6 +18,8 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
     with TickerProviderStateMixin {
   bool _isActive = false;
   String? _highlighted;
+  OverlayEntry? _overlayEntry;
+  final _triggerKey = GlobalKey();
 
   final _smallKey = GlobalKey();
   final _mediumKey = GlobalKey();
@@ -30,15 +32,13 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
   static const _mediumColor = Color(0xFFF4845F);
   static const _largeColor = Color(0xFFEF5350);
 
-  // Arc config: 3 buttons arranged in an arc above-left of the trigger button
-  // Angles in radians from the trigger button center (0 = right, pi/2 = up, pi = left)
-  static const _arcRadius = 80.0;
-  static const _buttonSize = 52.0;
-  // Angles: spread across upper-left arc
+  static const _arcRadius = 100.0;
+  static const _buttonSize = 58.0;
+  // Angles: wider spread so buttons don't overlap
   static const _angles = [
-    2.6,   // large  - leftmost
-    2.05,  // medium - middle
-    1.5,   // small  - topmost (≈ straight up)
+    2.7,  // large  - leftmost
+    2.0,  // medium - middle
+    1.3,  // small  - upper-right
   ];
   static const _values = ['large', 'medium', 'small'];
 
@@ -53,12 +53,133 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
       parent: _arcController,
       curve: Curves.easeOutBack,
     );
+    _arcController.addListener(_updateOverlay);
   }
 
   @override
   void dispose() {
+    _removeOverlay();
+    _arcController.removeListener(_updateOverlay);
     _arcController.dispose();
     super.dispose();
+  }
+
+  void _updateOverlay() {
+    _overlayEntry?.markNeedsBuild();
+  }
+
+  Offset _getTriggerCenter() {
+    final box =
+        _triggerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return Offset.zero;
+    final pos = box.localToGlobal(Offset.zero);
+    return Offset(pos.dx + box.size.width / 2, pos.dy + box.size.height / 2);
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    final overlay = Overlay.of(context);
+    _overlayEntry = OverlayEntry(
+      builder: (_) => _buildOverlayContent(),
+    );
+    overlay.insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  Widget _buildOverlayContent() {
+    final colors = ref.read(colorsProvider);
+    final s = ref.read(stringsProvider);
+    final center = _getTriggerCenter();
+
+    return Stack(
+      children: List.generate(_values.length, (i) {
+        final value = _values[i];
+        final angle = _angles[i];
+        final delay = i * 0.10;
+        return _buildArcButtonOverlay(
+          value: value,
+          label: _labelFor(value, s),
+          angle: angle,
+          delay: delay,
+          center: center,
+          colors: colors,
+        );
+      }),
+    );
+  }
+
+  Widget _buildArcButtonOverlay({
+    required String value,
+    required String label,
+    required double angle,
+    required double delay,
+    required Offset center,
+    required dynamic colors,
+  }) {
+    final isHighlighted = _highlighted == value;
+    final chipColor = _chipColor(value);
+    final key = _keyFor(value);
+
+    final targetDx = cos(angle) * _arcRadius;
+    final targetDy = -sin(angle) * _arcRadius;
+
+    final raw =
+        ((_arcAnimation.value - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+
+    final currentDx = targetDx * raw;
+    final currentDy = targetDy * raw;
+
+    final left = center.dx + currentDx - _buttonSize / 2;
+    final top = center.dy + currentDy - _buttonSize / 2;
+
+    return Positioned(
+      left: left,
+      top: top,
+      child: Transform.scale(
+        scale: raw,
+        child: Opacity(
+          opacity: raw,
+          child: Container(
+            key: key,
+            width: _buttonSize,
+            height: _buttonSize,
+            decoration: BoxDecoration(
+              color: isHighlighted ? chipColor : colors.card,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isHighlighted
+                    ? chipColor
+                    : chipColor.withValues(alpha: 0.4),
+                width: isHighlighted ? 2.5 : 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isHighlighted
+                      ? chipColor.withValues(alpha: 0.4)
+                      : Colors.black.withValues(alpha: 0.10),
+                  blurRadius: isHighlighted ? 14 : 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: isHighlighted ? 13 : 12,
+                  fontWeight: FontWeight.w700,
+                  color: isHighlighted ? Colors.white : chipColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _activate() {
@@ -66,12 +187,15 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
       _isActive = true;
       _highlighted = null;
     });
+    _showOverlay();
     _arcController.forward(from: 0);
   }
 
   void _deactivate({String? selected}) {
+    _arcController.reverse().then((_) {
+      _removeOverlay();
+    });
     setState(() => _isActive = false);
-    _arcController.reverse();
     if (selected != null) _recordSpitUp(selected);
     _highlighted = null;
   }
@@ -80,7 +204,12 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
 
   void _onPanUpdate(DragUpdateDetails details) {
     if (!_isActive) return;
-    setState(() => _highlighted = _hitTest(details.globalPosition));
+    final prev = _highlighted;
+    _highlighted = _hitTest(details.globalPosition);
+    if (_highlighted != prev) {
+      setState(() {});
+      _overlayEntry?.markNeedsBuild();
+    }
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -99,8 +228,7 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
           entry.value.currentContext?.findRenderObject() as RenderBox?;
       if (box == null) continue;
       final topLeft = box.localToGlobal(Offset.zero);
-      // Expand hit area slightly for easier targeting
-      final rect = (topLeft & box.size).inflate(6);
+      final rect = (topLeft & box.size).inflate(8);
       if (rect.contains(globalPosition)) return entry.key;
     }
     return null;
@@ -126,8 +254,7 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
         content: Text(s.spitUpRecorded(label)),
         backgroundColor: colors.accent,
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -135,53 +262,37 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
 
   String _amountLabel(String amount, dynamic s) {
     switch (amount) {
-      case 'small':
-        return s.spitUpSmall;
-      case 'medium':
-        return s.spitUpMedium;
-      case 'large':
-        return s.spitUpLarge;
-      default:
-        return amount;
+      case 'small': return s.spitUpSmall;
+      case 'medium': return s.spitUpMedium;
+      case 'large': return s.spitUpLarge;
+      default: return amount;
     }
   }
 
   Color _chipColor(String value) {
     switch (value) {
-      case 'small':
-        return _smallColor;
-      case 'medium':
-        return _mediumColor;
-      case 'large':
-        return _largeColor;
-      default:
-        return _smallColor;
+      case 'small': return _smallColor;
+      case 'medium': return _mediumColor;
+      case 'large': return _largeColor;
+      default: return _smallColor;
     }
   }
 
   GlobalKey _keyFor(String value) {
     switch (value) {
-      case 'small':
-        return _smallKey;
-      case 'medium':
-        return _mediumKey;
-      case 'large':
-        return _largeKey;
-      default:
-        return _smallKey;
+      case 'small': return _smallKey;
+      case 'medium': return _mediumKey;
+      case 'large': return _largeKey;
+      default: return _smallKey;
     }
   }
 
   String _labelFor(String value, dynamic s) {
     switch (value) {
-      case 'small':
-        return s.spitUpSmall;
-      case 'medium':
-        return s.spitUpMedium;
-      case 'large':
-        return s.spitUpLarge;
-      default:
-        return value;
+      case 'small': return s.spitUpSmall;
+      case 'medium': return s.spitUpMedium;
+      case 'large': return s.spitUpLarge;
+      default: return value;
     }
   }
 
@@ -200,131 +311,33 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
           onLongPressStart: (_) => _activate(),
           onLongPressMoveUpdate: (details) {
             if (!_isActive) return;
-            setState(
-                () => _highlighted = _hitTest(details.globalPosition));
+            final prev = _highlighted;
+            _highlighted = _hitTest(details.globalPosition);
+            if (_highlighted != prev) {
+              setState(() {});
+              _overlayEntry?.markNeedsBuild();
+            }
           },
           onLongPressEnd: (_) {
             if (!_isActive) return;
             _deactivate(selected: _highlighted);
           },
-          child: SizedBox(
-            width: _arcRadius + _buttonSize + 20,
-            height: _arcRadius + _buttonSize + 20,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Arc buttons
-                ...List.generate(_values.length, (i) {
-                  final value = _values[i];
-                  final angle = _angles[i];
-                  // Stagger: each button starts slightly later
-                  final delay = i * 0.12;
-                  return _buildArcButton(
-                    value: value,
-                    label: _labelFor(value, s),
-                    angle: angle,
-                    delay: delay,
-                    colors: colors,
-                  );
-                }),
-                // Trigger button (bottom-right of the SizedBox)
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: _isActive
-                          ? colors.red.withValues(alpha: 0.12)
-                          : colors.gray,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Text(
-                      s.spitUp,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _isActive ? colors.red : colors.textSub,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          child: Container(
+            key: _triggerKey,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+            decoration: BoxDecoration(
+              color: _isActive
+                  ? colors.red.withValues(alpha: 0.12)
+                  : colors.gray,
+              borderRadius: BorderRadius.circular(18),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildArcButton({
-    required String value,
-    required String label,
-    required double angle,
-    required double delay,
-    required dynamic colors,
-  }) {
-    final isHighlighted = _highlighted == value;
-    final chipColor = _chipColor(value);
-    final key = _keyFor(value);
-
-    // Position: offset from bottom-right corner (trigger button center)
-    final dx = cos(angle) * _arcRadius;
-    final dy = -sin(angle) * _arcRadius;
-
-    return AnimatedBuilder(
-      animation: _arcAnimation,
-      builder: (context, child) {
-        // Staggered progress
-        final raw =
-            ((_arcAnimation.value - delay) / (1.0 - delay)).clamp(0.0, 1.0);
-        final progress = raw;
-
-        return Positioned(
-          bottom: -dy * progress + (_buttonSize / 2) - 4,
-          right: -dx * progress + (_buttonSize / 2) - 20,
-          child: Transform.scale(
-            scale: progress,
-            child: Opacity(
-              opacity: progress,
-              child: child,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        key: key,
-        width: _buttonSize,
-        height: _buttonSize,
-        decoration: BoxDecoration(
-          color: isHighlighted
-              ? chipColor
-              : colors.card,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isHighlighted
-                ? chipColor
-                : chipColor.withValues(alpha: 0.3),
-            width: isHighlighted ? 2.5 : 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isHighlighted
-                  ? chipColor.withValues(alpha: 0.35)
-                  : Colors.black.withValues(alpha: 0.08),
-              blurRadius: isHighlighted ? 12 : 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: isHighlighted ? 12 : 11,
-              fontWeight: FontWeight.w700,
-              color: isHighlighted ? Colors.white : chipColor,
+            child: Text(
+              s.spitUp,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _isActive ? colors.red : colors.textSub,
+              ),
             ),
           ),
         ),
