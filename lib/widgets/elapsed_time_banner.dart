@@ -36,14 +36,13 @@ class _ElapsedTimeBannerState extends ConsumerState<ElapsedTimeBanner> {
     final colors = ref.watch(colorsProvider);
     final s = ref.watch(stringsProvider);
 
-    // Find last breast milk or formula record (not spit up)
     final feedRecords = records.where(
       (r) => r.feedingType == FeedingType.breastMilk || r.feedingType == FeedingType.formula,
     );
 
     if (feedRecords.isEmpty) return const SizedBox.shrink();
 
-    final last = feedRecords.first; // records are sorted newest first
+    final last = feedRecords.first;
     final elapsed = DateTime.now().difference(last.endedAt);
 
     final hours = elapsed.inHours;
@@ -56,24 +55,45 @@ class _ElapsedTimeBannerState extends ConsumerState<ElapsedTimeBanner> {
       timeStr = '${minutes}m';
     }
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
+    // Build last feed detail
+    String lastDetail;
+    if (last.feedingType == FeedingType.breastMilk) {
+      final side = last.breastSide == BreastSide.left ? s.left : s.right;
+      lastDetail = s.lastFeedBreast(side, last.displayTime);
+    } else {
+      lastDetail = s.lastFeedFormula(last.amountMl ?? 0);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 6, 24, 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.schedule_rounded, size: 14, color: colors.accent),
-          const SizedBox(width: 6),
+          Icon(Icons.schedule_rounded, size: 13, color: colors.textSub.withValues(alpha: 0.5)),
+          const SizedBox(width: 4),
           Text(
             s.elapsedSinceLastFeed(timeStr),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: colors.accent,
+              color: colors.textSub.withValues(alpha: 0.7),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            width: 3,
+            height: 3,
+            decoration: BoxDecoration(
+              color: colors.textSub.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+          ),
+          Text(
+            lastDetail,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: colors.textSub.withValues(alpha: 0.5),
             ),
           ),
         ],

@@ -59,6 +59,8 @@ abstract class AppStringBase {
   String dailyBreastTotal(String duration);
   String dailyFormulaTotal(int ml);
   String elapsedSinceLastFeed(String time);
+  String lastFeedBreast(String side, String duration);
+  String lastFeedFormula(int ml);
 }
 
 class _JaStrings implements AppStringBase {
@@ -108,6 +110,8 @@ class _JaStrings implements AppStringBase {
   @override String dailyBreastTotal(String duration) => '母乳 $duration';
   @override String dailyFormulaTotal(int ml) => 'ミルク ${ml}ml';
   @override String elapsedSinceLastFeed(String time) => '前回から $time';
+  @override String lastFeedBreast(String side, String duration) => '母乳（$side）$duration';
+  @override String lastFeedFormula(int ml) => 'ミルク ${ml}ml';
 }
 
 class _EnStrings implements AppStringBase {
@@ -157,4 +161,6 @@ class _EnStrings implements AppStringBase {
   @override String dailyBreastTotal(String duration) => 'Breast $duration';
   @override String dailyFormulaTotal(int ml) => 'Formula ${ml}ml';
   @override String elapsedSinceLastFeed(String time) => '$time since last feed';
+  @override String lastFeedBreast(String side, String duration) => 'Breast ($side) $duration';
+  @override String lastFeedFormula(int ml) => 'Formula ${ml}ml';
 }
