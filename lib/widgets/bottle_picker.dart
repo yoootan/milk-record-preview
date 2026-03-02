@@ -31,6 +31,8 @@ class _BottlePickerState extends State<BottlePicker>
 
   static const int _maxAmount = 300;
   static const int _step = 10;
+  static const double _bottleWidth = 180;
+  static const double _bottleHeight = 260;
 
   @override
   void initState() {
@@ -48,22 +50,37 @@ class _BottlePickerState extends State<BottlePicker>
     super.dispose();
   }
 
-  void _updateAmount(double localY, double height) {
-    // Bottle fill area mapped to SVG coordinates
-    final fillTop = height * 0.28;
-    final fillBottom = height * 0.93;
+  int _yToMl(double localY) {
+    final fillTop = _bottleHeight * 0.28;
+    final fillBottom = _bottleHeight * 0.93;
     final fillHeight = fillBottom - fillTop;
 
     final clamped = localY.clamp(fillTop, fillBottom);
     final ratio = 1.0 - (clamped - fillTop) / fillHeight;
     final raw = (ratio * _maxAmount).round();
     final snapped = (raw / _step).round() * _step;
-    final amount = snapped.clamp(0, _maxAmount);
+    return snapped.clamp(0, _maxAmount);
+  }
 
-    if (amount != _selectedAmount) {
-      setState(() => _selectedAmount = amount);
-      widget.onAmountChanged(amount);
+  bool _isInsideBottle(Offset localPos) {
+    return localPos.dx >= 0 &&
+        localPos.dx <= _bottleWidth &&
+        localPos.dy >= 0 &&
+        localPos.dy <= _bottleHeight;
+  }
+
+  void _updateAmount(int ml) {
+    if (ml != _selectedAmount) {
+      setState(() => _selectedAmount = ml);
+      widget.onAmountChanged(ml);
     }
+  }
+
+  void _cancelTouch() {
+    _isTouching = false;
+    setState(() => _selectedAmount = 0);
+    widget.onAmountChanged(0);
+    widget.onTouchCancel?.call();
   }
 
   @override
@@ -82,39 +99,41 @@ class _BottlePickerState extends State<BottlePicker>
           child: Text('${_selectedAmount}ml'),
         ),
         const SizedBox(height: 4),
-        // Bottle
+        // Bottle - wrapped in Listener to prevent parent scroll
         SizedBox(
-          width: 180,
-          height: 260,
+          width: _bottleWidth,
+          height: _bottleHeight,
           child: GestureDetector(
-            onPanStart: (details) {
+            // Prevent parent ScrollView from intercepting vertical drags
+            onVerticalDragStart: (details) {
               _isTouching = true;
-              _updateAmount(details.localPosition.dy, 260);
+              _updateAmount(_yToMl(details.localPosition.dy));
               widget.onTouchStart?.call();
             },
-            onPanUpdate: (details) {
-              // Cancel if dragged outside bottle bounds
+            onVerticalDragUpdate: (details) {
+              if (!_isTouching) return;
               final pos = details.localPosition;
-              if (pos.dx < 0 || pos.dx > 180 || pos.dy < 0 || pos.dy > 260) {
-                if (_isTouching) {
-                  _isTouching = false;
-                  setState(() => _selectedAmount = 0);
-                  widget.onAmountChanged(0);
-                  widget.onTouchCancel?.call();
-                }
+              if (!_isInsideBottle(pos)) {
+                // 哺乳瓶の外に出た → リセット
+                _cancelTouch();
                 return;
               }
-              _updateAmount(pos.dy, 260);
+              _updateAmount(_yToMl(pos.dy));
             },
-            onPanEnd: (_) {
+            onVerticalDragEnd: (_) {
               if (_isTouching) {
                 _isTouching = false;
                 widget.onTouchEnd?.call();
               }
             },
+            onVerticalDragCancel: () {
+              if (_isTouching) {
+                _cancelTouch();
+              }
+            },
             onTapDown: (details) {
               _isTouching = true;
-              _updateAmount(details.localPosition.dy, 260);
+              _updateAmount(_yToMl(details.localPosition.dy));
               widget.onTouchStart?.call();
             },
             onTapUp: (_) {
@@ -127,7 +146,7 @@ class _BottlePickerState extends State<BottlePicker>
               animation: _bubbleController,
               builder: (context, _) {
                 return CustomPaint(
-                  size: const Size(180, 260),
+                  size: const Size(_bottleWidth, _bottleHeight),
                   painter: _BottlePainter(
                     fillRatio: _selectedAmount / _maxAmount,
                     accentColor: colors.accent,
@@ -171,10 +190,8 @@ class _BottlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final sx = w / 220;
-    final sy = h / 320;
+    final sx = size.width / 220;
+    final sy = size.height / 320;
 
     _drawCap(canvas, sx, sy);
     _drawRing(canvas, sx, sy);
@@ -292,7 +309,6 @@ class _BottlePainter extends CustomPainter {
     canvas.save();
     canvas.clipPath(_bodyPath(sx, sy));
 
-    // Milk gradient
     final milkRect = Rect.fromLTWH(
       35 * sx, milkTop * sy, 150 * sx, (bottleBot - milkTop) * sy,
     );
@@ -304,7 +320,7 @@ class _BottlePainter extends CustomPainter {
       ).createShader(milkRect);
     canvas.drawRect(milkRect, milkPaint);
 
-    // Wave at top
+    // Wave
     final wavePaint = Paint()..color = const Color(0xFFFFF8E8).withValues(alpha: 0.45);
     final wavePath = Path();
     final waveY = milkTop * sy;
