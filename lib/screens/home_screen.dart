@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_strings.dart';
 import '../providers/feeding_provider.dart';
+import '../providers/locale_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/timer_provider.dart';
 import '../theme/app_theme.dart';
@@ -30,10 +32,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onTabChanged(int index) {
     final timer = ref.read(timerProvider);
+    final s = ref.read(stringsProvider);
     if (timer.isRunning) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('計測中はタブを切り替えられません'),
+          content: Text(s.cannotSwitchTab),
           backgroundColor: AppTheme.currentThemeColors.accent,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -48,13 +51,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _showSettings() {
     final themeState = ref.read(themeProvider);
+    final locale = ref.read(localeProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => _SettingsSheet(
         currentDefault: _selectedTabIndex == 0 ? 'breastMilk' : 'formula',
         currentTheme: themeState.selectedTheme,
         nightModeEnabled: themeState.nightModeEnabled,
+        currentLocale: locale,
         onDefaultChanged: (value) {
           ref.read(defaultTabProvider.notifier).setDefaultTab(value);
         },
@@ -64,18 +70,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onNightModeChanged: (enabled) {
           ref.read(themeProvider.notifier).setNightMode(enabled);
         },
+        onLocaleChanged: (locale) {
+          ref.read(localeProvider.notifier).setLocale(locale);
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch theme to rebuild on changes
     ref.watch(themeProvider);
+    final s = ref.watch(stringsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('授乳きろく'),
+        title: Text(s.appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_rounded),
@@ -86,19 +95,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Column(
         children: [
-          // リアルタイム集計バナー
           const LiveBanner(),
-          // タブバー
           FeedingTabBar(
             selectedIndex: _selectedTabIndex,
             onTabChanged: _onTabChanged,
           ),
-          // スクロール可能なコンテンツ
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // メインコンテンツ
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: _selectedTabIndex == 0
@@ -106,17 +111,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : const FormulaView(key: ValueKey('formula')),
                   ),
                   const SizedBox(height: 8),
-                  // 吐き戻しボタン
                   const SpitUpButton(),
                   const SizedBox(height: 8),
-                  // 区切り線
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Divider(
                       color: AppTheme.currentThemeColors.textSub.withValues(alpha: 0.15),
                     ),
                   ),
-                  // 記録一覧
                   const RecordList(),
                 ],
               ),
@@ -132,22 +134,27 @@ class _SettingsSheet extends StatelessWidget {
   final String currentDefault;
   final AppColorTheme currentTheme;
   final bool nightModeEnabled;
+  final String currentLocale;
   final ValueChanged<String> onDefaultChanged;
   final ValueChanged<AppColorTheme> onThemeChanged;
   final ValueChanged<bool> onNightModeChanged;
+  final ValueChanged<String> onLocaleChanged;
 
   const _SettingsSheet({
     required this.currentDefault,
     required this.currentTheme,
     required this.nightModeEnabled,
+    required this.currentLocale,
     required this.onDefaultChanged,
     required this.onThemeChanged,
     required this.onNightModeChanged,
+    required this.onLocaleChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.currentThemeColors;
+    final s = AppStrings.forLocale(currentLocale);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -171,7 +178,7 @@ class _SettingsSheet extends StatelessWidget {
           const SizedBox(height: 20),
           // カラーテーマ
           Text(
-            'カラーテーマ',
+            s.settingsColorTheme,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -181,13 +188,13 @@ class _SettingsSheet extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildThemeDot(context, AppColorTheme.pink, const Color(0xFFE8729A), 'ピンク'),
+              _buildThemeDot(context, AppColorTheme.pink, const Color(0xFFE8729A), s.themePink),
               const SizedBox(width: 16),
-              _buildThemeDot(context, AppColorTheme.orange, const Color(0xFFF4845F), 'オレンジ'),
+              _buildThemeDot(context, AppColorTheme.orange, const Color(0xFFF4845F), s.themeOrange),
               const SizedBox(width: 16),
-              _buildThemeDot(context, AppColorTheme.blue, const Color(0xFF5B9BD5), 'ブルー'),
+              _buildThemeDot(context, AppColorTheme.blue, const Color(0xFF5B9BD5), s.themeBlue),
               const SizedBox(width: 16),
-              _buildThemeDot(context, AppColorTheme.dark, const Color(0xFF1A1A2E), 'ダーク'),
+              _buildThemeDot(context, AppColorTheme.dark, const Color(0xFF1A1A2E), s.themeDark),
             ],
           ),
           const SizedBox(height: 24),
@@ -199,7 +206,7 @@ class _SettingsSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'ナイトモード',
+                    s.settingsNightMode,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -208,11 +215,8 @@ class _SettingsSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '20:00〜6:00 自動ダーク',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colors.textSub,
-                    ),
+                    s.settingsNightModeSub,
+                    style: TextStyle(fontSize: 12, color: colors.textSub),
                   ),
                 ],
               ),
@@ -228,9 +232,23 @@ class _SettingsSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
+          // 言語
+          Text(
+            s.settingsLanguage,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: colors.text,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildLangOption(context, 'ja', s.langJapanese, colors),
+          const SizedBox(height: 8),
+          _buildLangOption(context, 'en', s.langEnglish, colors),
+          const SizedBox(height: 24),
           // デフォルトタブ
           Text(
-            'デフォルトのタブ',
+            s.settingsDefaultTab,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -239,38 +257,53 @@ class _SettingsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'アプリ起動時に表示するタブ',
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textSub,
-            ),
+            s.settingsDefaultTabSub,
+            style: TextStyle(fontSize: 13, color: colors.textSub),
           ),
           const SizedBox(height: 16),
-          _buildOption(
-            context,
-            label: '母乳',
-            icon: Icons.favorite_rounded,
-            value: 'breastMilk',
-          ),
+          _buildTabOption(context, label: s.breastMilk, icon: Icons.favorite_rounded, value: 'breastMilk'),
           const SizedBox(height: 8),
-          _buildOption(
-            context,
-            label: 'ミルク',
-            icon: Icons.local_drink_rounded,
-            value: 'formula',
-          ),
+          _buildTabOption(context, label: s.formula, icon: Icons.local_drink_rounded, value: 'formula'),
           SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
         ],
       ),
     );
   }
 
-  Widget _buildThemeDot(
-    BuildContext context,
-    AppColorTheme theme,
-    Color color,
-    String label,
-  ) {
+  Widget _buildLangOption(BuildContext context, String locale, String label, ThemeColors colors) {
+    final isSelected = currentLocale == locale;
+    return GestureDetector(
+      onTap: () {
+        onLocaleChanged(locale);
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? colors.accent.withValues(alpha: 0.12) : colors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected ? Border.all(color: colors.accent, width: 2) : null,
+        ),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? colors.accent : colors.text,
+              ),
+            ),
+            const Spacer(),
+            if (isSelected)
+              Icon(Icons.check_circle_rounded, color: colors.accent, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeDot(BuildContext context, AppColorTheme theme, Color color, String label) {
     final isSelected = currentTheme == theme;
     return GestureDetector(
       onTap: () {
@@ -285,22 +318,12 @@ class _SettingsSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              border: isSelected
-                  ? Border.all(color: Colors.white, width: 3)
-                  : null,
+              border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
               boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.5),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ]
+                  ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2)]
                   : null,
             ),
-            child: isSelected
-                ? const Icon(Icons.check, color: Colors.white, size: 20)
-                : null,
+            child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
           ),
           const SizedBox(height: 4),
           Text(
@@ -316,12 +339,7 @@ class _SettingsSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildOption(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    required String value,
-  }) {
+  Widget _buildTabOption(BuildContext context, {required String label, required IconData icon, required String value}) {
     final isSelected = currentDefault == value;
     final colors = AppTheme.currentThemeColors;
     return GestureDetector(
@@ -332,18 +350,13 @@ class _SettingsSheet extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? colors.accent.withValues(alpha: 0.12)
-              : colors.card,
+          color: isSelected ? colors.accent.withValues(alpha: 0.12) : colors.card,
           borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: colors.accent, width: 2)
-              : null,
+          border: isSelected ? Border.all(color: colors.accent, width: 2) : null,
         ),
         child: Row(
           children: [
-            Icon(icon,
-                color: isSelected ? colors.accent : colors.textSub),
+            Icon(icon, color: isSelected ? colors.accent : colors.textSub),
             const SizedBox(width: 12),
             Text(
               label,
@@ -355,8 +368,7 @@ class _SettingsSheet extends StatelessWidget {
             ),
             const Spacer(),
             if (isSelected)
-              Icon(Icons.check_circle_rounded,
-                  color: colors.accent, size: 22),
+              Icon(Icons.check_circle_rounded, color: colors.accent, size: 22),
           ],
         ),
       ),

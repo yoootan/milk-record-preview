@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/feeding_record.dart';
 import '../providers/feeding_provider.dart';
+import '../providers/locale_provider.dart';
 import '../providers/timer_provider.dart';
 import '../theme/app_theme.dart';
 import 'timer_display.dart';
@@ -24,6 +25,7 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
 
   void _stopFeeding() {
     final timerState = ref.read(timerProvider.notifier).stop();
+    final s = ref.read(stringsProvider);
 
     if (timerState.startedAt != null && timerState.elapsedSeconds > 0) {
       final record = FeedingRecord(
@@ -35,6 +37,17 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
         endedAt: DateTime.now(),
       );
       ref.read(feedingRecordsProvider.notifier).addRecord(record);
+
+      final sideName = _activeSide == BreastSide.left ? s.left : s.right;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.breastRecorded(sideName, record.displayTime)),
+          backgroundColor: AppTheme.currentThemeColors.accent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
 
     setState(() => _activeSide = null);
@@ -44,6 +57,7 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
   Widget build(BuildContext context) {
     final timer = ref.watch(timerProvider);
     final colors = AppTheme.currentThemeColors;
+    final s = ref.watch(stringsProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -55,34 +69,27 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
             isRunning: timer.isRunning,
           ),
           const SizedBox(height: 32),
-
           if (!timer.isRunning) ...[
             Text(
-              'どちら側ですか？',
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.textSub,
-              ),
+              s.whichSide,
+              style: TextStyle(fontSize: 14, color: colors.textSub),
             ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildSideButton('ひだり', BreastSide.left, colors),
+                _buildSideButton(s.left, BreastSide.left, colors),
                 const SizedBox(width: 24),
-                _buildSideButton('みぎ', BreastSide.right, colors),
+                _buildSideButton(s.right, BreastSide.right, colors),
               ],
             ),
           ] else ...[
             Text(
-              '${_activeSide == BreastSide.left ? "ひだり" : "みぎ"}で授乳中...',
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.textSub,
-              ),
+              s.feedingLeft(_activeSide == BreastSide.left ? s.left : s.right),
+              style: TextStyle(fontSize: 14, color: colors.textSub),
             ),
             const SizedBox(height: 16),
-            _buildStopButton(colors),
+            _buildStopButton(colors, s),
           ],
         ],
       ),
@@ -106,11 +113,7 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
           ),
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(
-              color: shadow,
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
+            BoxShadow(color: shadow, blurRadius: 16, offset: const Offset(0, 6)),
           ],
         ),
         child: Column(
@@ -124,11 +127,7 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -136,7 +135,7 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
     );
   }
 
-  Widget _buildStopButton(ThemeColors colors) {
+  Widget _buildStopButton(ThemeColors colors, dynamic s) {
     return GestureDetector(
       onTap: _stopFeeding,
       child: Container(
@@ -150,28 +149,16 @@ class _BreastMilkViewState extends ConsumerState<BreastMilkView> {
           ),
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(
-              color: colors.btnStopShadow,
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
+            BoxShadow(color: colors.btnStopShadow, blurRadius: 20, offset: const Offset(0, 8)),
           ],
         ),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.stop_rounded,
-              color: Colors.white,
-              size: 48,
-            ),
+            const Icon(Icons.stop_rounded, color: Colors.white, size: 48),
             Text(
-              'ストップ',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              s.stop,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
         ),

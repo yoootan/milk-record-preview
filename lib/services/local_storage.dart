@@ -65,4 +65,13 @@ class LocalStorage {
   static bool getNightMode() {
     return settingsBox.get('nightMode', defaultValue: false) as bool;
   }
+
+  // 言語の保存・取得
+  static Future<void> setLocale(String locale) async {
+    await settingsBox.put('locale', locale);
+  }
+
+  static String getLocale() {
+    return settingsBox.get('locale', defaultValue: 'ja') as String;
+  }
 }

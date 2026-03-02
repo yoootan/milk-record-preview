@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
 
-class FeedingTabBar extends StatelessWidget {
+class FeedingTabBar extends ConsumerWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabChanged;
 
@@ -12,8 +14,9 @@ class FeedingTabBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppTheme.currentThemeColors;
+    final s = ref.watch(stringsProvider);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       padding: const EdgeInsets.all(4),
@@ -23,8 +26,8 @@ class FeedingTabBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildTab(0, '母乳', Icons.favorite_rounded, colors),
-          _buildTab(1, 'ミルク', Icons.local_drink_rounded, colors),
+          _buildTab(0, s.breastMilk, Icons.favorite_rounded, colors),
+          _buildTab(1, s.formula, Icons.local_drink_rounded, colors),
         ],
       ),
     );
@@ -54,11 +57,7 @@ class FeedingTabBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? colors.accent : colors.textSub,
-              ),
+              Icon(icon, size: 20, color: isSelected ? colors.accent : colors.textSub),
               const SizedBox(width: 6),
               Text(
                 label,

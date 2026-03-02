@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
 
-class LiveBanner extends StatefulWidget {
+class LiveBanner extends ConsumerStatefulWidget {
   const LiveBanner({super.key});
 
   @override
-  State<LiveBanner> createState() => _LiveBannerState();
+  ConsumerState<LiveBanner> createState() => _LiveBannerState();
 }
 
-class _LiveBannerState extends State<LiveBanner>
+class _LiveBannerState extends ConsumerState<LiveBanner>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -34,8 +36,24 @@ class _LiveBannerState extends State<LiveBanner>
   }
 
   void _generateCount() {
+    final h = DateTime.now().hour;
+    final base = 800 + Random().nextInt(600);
+    double mult = 1;
+    if (h >= 0 && h < 5) {
+      mult = 0.3;
+    } else if (h >= 5 && h < 8) {
+      mult = 0.7;
+    } else if (h >= 8 && h < 12) {
+      mult = 1.2;
+    } else if (h >= 12 && h < 18) {
+      mult = 1.0;
+    } else if (h >= 18 && h < 21) {
+      mult = 1.3;
+    } else {
+      mult = 0.8;
+    }
     setState(() {
-      _count = 80 + Random().nextInt(40); // 80-119
+      _count = (base * mult + Random().nextInt(50) - 25).round();
     });
   }
 
@@ -49,6 +67,7 @@ class _LiveBannerState extends State<LiveBanner>
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.currentThemeColors;
+    final s = ref.watch(stringsProvider);
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -60,7 +79,6 @@ class _LiveBannerState extends State<LiveBanner>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Pulsing green dot
           AnimatedBuilder(
             animation: _pulseAnimation,
             builder: (context, child) {
@@ -75,35 +93,12 @@ class _LiveBannerState extends State<LiveBanner>
             child: Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                color: colors.green,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: colors.green, shape: BoxShape.circle),
             ),
           ),
           const SizedBox(width: 10),
           Text(
-            'いま',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: colors.textSub,
-              letterSpacing: 0.5,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              '$_count',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: colors.accent,
-              ),
-            ),
-          ),
-          Text(
-            '人が授乳中',
+            s.liveBanner(_count),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,

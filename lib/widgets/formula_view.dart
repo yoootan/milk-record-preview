@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/feeding_record.dart';
 import '../providers/feeding_provider.dart';
+import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
 import 'bottle_picker.dart';
 
@@ -33,12 +34,10 @@ class _FormulaBottle extends ConsumerStatefulWidget {
 class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
   int _currentMl = 0;
   int _lastRecordedMl = -1;
-  String _hintState = 'idle'; // 'idle', 'touching', 'saved'
+  String _hintState = 'idle';
 
   void _onAmountChanged(int ml) {
-    setState(() {
-      _currentMl = ml;
-    });
+    setState(() => _currentMl = ml);
   }
 
   void _onTouchStart() {
@@ -46,8 +45,8 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
   }
 
   void _onTouchEnd() {
+    final s = ref.read(stringsProvider);
     if (_currentMl > 0 && _currentMl != _lastRecordedMl) {
-      // 記録保存
       final now = DateTime.now();
       final record = FeedingRecord(
         id: const Uuid().v4(),
@@ -62,12 +61,10 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ミルク ${_currentMl}ml 記録しました'),
+          content: Text(s.formulaRecorded(_currentMl)),
           backgroundColor: AppTheme.currentThemeColors.accent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -91,6 +88,7 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.currentThemeColors;
+    final s = ref.watch(stringsProvider);
     return Column(
       children: [
         BottlePicker(
@@ -105,23 +103,15 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
           duration: const Duration(milliseconds: 200),
           child: _hintState == 'touching'
               ? Text(
-                  '指をはなすと記録',
+                  s.releaseToRecord,
                   key: const ValueKey('touching'),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: colors.accent,
-                  ),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: colors.accent),
                 )
               : _hintState == 'saved'
                   ? Text(
-                      '✓ 記録しました！',
+                      s.recorded,
                       key: const ValueKey('saved'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: colors.accent,
-                      ),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: colors.accent),
                     )
                   : const SizedBox.shrink(key: ValueKey('idle')),
         ),
