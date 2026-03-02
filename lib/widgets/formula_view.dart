@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/feeding_record.dart';
 import '../providers/feeding_provider.dart';
 import '../providers/locale_provider.dart';
-import '../theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import 'bottle_picker.dart';
 
 class FormulaView extends ConsumerWidget {
@@ -46,6 +46,7 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
 
   void _onTouchEnd() {
     final s = ref.read(stringsProvider);
+    final colors = ref.read(colorsProvider);
     if (_currentMl > 0 && _currentMl != _lastRecordedMl) {
       final now = DateTime.now();
       final record = FeedingRecord(
@@ -62,7 +63,7 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(s.formulaRecorded(_currentMl)),
-          backgroundColor: AppTheme.currentThemeColors.accent,
+          backgroundColor: colors.accent,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           duration: const Duration(seconds: 2),
@@ -71,7 +72,13 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
 
       setState(() => _hintState = 'saved');
       Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted) setState(() => _hintState = 'idle');
+        if (mounted) {
+          setState(() {
+            _hintState = 'idle';
+            _currentMl = 0;
+            _lastRecordedMl = -1;
+          });
+        }
       });
     } else {
       setState(() => _hintState = 'idle');
@@ -87,7 +94,7 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.currentThemeColors;
+    final colors = ref.watch(colorsProvider);
     final s = ref.watch(stringsProvider);
     return Column(
       children: [
@@ -97,6 +104,8 @@ class _FormulaBottleState extends ConsumerState<_FormulaBottle> {
           onTouchStart: _onTouchStart,
           onTouchEnd: _onTouchEnd,
           onTouchCancel: _onTouchCancel,
+          accentColor: colors.accent,
+          textSubColor: colors.textSub,
         ),
         const SizedBox(height: 4),
         AnimatedSwitcher(

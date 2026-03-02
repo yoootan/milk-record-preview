@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/feeding_record.dart';
 import '../providers/feeding_provider.dart';
 import '../providers/locale_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 
 class RecordList extends ConsumerWidget {
@@ -13,6 +14,7 @@ class RecordList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final records = ref.watch(feedingRecordsProvider);
     final s = ref.watch(stringsProvider);
+    final colors = ref.watch(colorsProvider);
 
     if (records.isEmpty) {
       return Padding(
@@ -22,14 +24,14 @@ class RecordList extends ConsumerWidget {
             Icon(
               Icons.edit_note_rounded,
               size: 48,
-              color: AppTheme.currentThemeColors.textSub.withValues(alpha: 0.3),
+              color: colors.textSub.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 8),
             Text(
               s.noRecords,
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.currentThemeColors.textSub.withValues(alpha: 0.5),
+                color: colors.textSub.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -50,7 +52,7 @@ class RecordList extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.currentThemeColors.textSub,
+                color: colors.textSub,
               ),
             ),
           ),
@@ -82,7 +84,7 @@ class RecordList extends ConsumerWidget {
 
   Widget _buildRecordItem(
       BuildContext context, WidgetRef ref, FeedingRecord record, dynamic s) {
-    final colors = AppTheme.currentThemeColors;
+    final colors = ref.watch(colorsProvider);
     final type = record.feedingType;
 
     IconData icon;

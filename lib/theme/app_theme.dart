@@ -50,22 +50,6 @@ class ThemeColors {
 }
 
 class AppTheme {
-  // Current active theme colors (set by ThemeNotifier)
-  static ThemeColors _currentColors = pinkColors;
-  static ThemeColors get currentThemeColors => _currentColors;
-  static void setCurrentColors(ThemeColors colors) => _currentColors = colors;
-
-  // Legacy accessors for backward compat during migration
-  static Color get primaryPeach => _currentColors.accent;
-  static Color get lightPeach => _currentColors.accentLight;
-  static Color get cream => _currentColors.bg;
-  static Color get softPink => const Color(0xFFFFB6C1);
-  static Color get warmOrange => const Color(0xFFFFCC80);
-  static Color get warmBrown => const Color(0xFF8D6E63);
-  static Color get lightGray => _currentColors.gray;
-  static Color get textDark => _currentColors.text;
-  static Color get textLight => _currentColors.textSub;
-
   // ===== Pink Theme =====
   static const pinkColors = ThemeColors(
     bg: Color(0xFFFFF5F7),
@@ -203,7 +187,4 @@ class AppTheme {
       ),
     );
   }
-
-  // Legacy theme getter for backward compat
-  static ThemeData get theme => buildTheme(pinkColors);
 }

@@ -26,11 +26,8 @@ class ThemeState {
     );
   }
 
-  /// Returns the effective theme considering night mode
   AppColorTheme get effectiveTheme {
-    if (nightModeEnabled && isNightTime) {
-      return AppColorTheme.dark;
-    }
+    if (nightModeEnabled && isNightTime) return AppColorTheme.dark;
     return selectedTheme;
   }
 
@@ -39,6 +36,11 @@ class ThemeState {
 
 final themeProvider =
     NotifierProvider<ThemeNotifier, ThemeState>(ThemeNotifier.new);
+
+// Derived provider for colors - all widgets should watch this
+final colorsProvider = Provider<ThemeColors>((ref) {
+  return ref.watch(themeProvider).colors;
+});
 
 class ThemeNotifier extends Notifier<ThemeState> {
   Timer? _nightCheckTimer;
@@ -53,25 +55,18 @@ class ThemeNotifier extends Notifier<ThemeState> {
     final nightMode = LocalStorage.getNightMode();
     final isNight = _checkNightTime();
 
-    final initialState = ThemeState(
+    _startNightTimeCheck();
+
+    return ThemeState(
       selectedTheme: savedTheme,
       nightModeEnabled: nightMode,
       isNightTime: isNight,
     );
-
-    // Update AppTheme static reference
-    AppTheme.setCurrentColors(initialState.colors);
-
-    // Start periodic night time check
-    _startNightTimeCheck();
-
-    return initialState;
   }
 
   void setTheme(AppColorTheme theme) {
     LocalStorage.setColorTheme(theme);
     state = state.copyWith(selectedTheme: theme);
-    AppTheme.setCurrentColors(state.colors);
   }
 
   void setNightMode(bool enabled) {
@@ -80,7 +75,6 @@ class ThemeNotifier extends Notifier<ThemeState> {
       nightModeEnabled: enabled,
       isNightTime: _checkNightTime(),
     );
-    AppTheme.setCurrentColors(state.colors);
   }
 
   void _startNightTimeCheck() {
@@ -89,12 +83,10 @@ class ThemeNotifier extends Notifier<ThemeState> {
       final isNight = _checkNightTime();
       if (isNight != state.isNightTime) {
         state = state.copyWith(isNightTime: isNight);
-        AppTheme.setCurrentColors(state.colors);
       }
     });
   }
 
-  /// Night time: 20:00 - 06:00
   static bool _checkNightTime() {
     final hour = DateTime.now().hour;
     return hour >= 20 || hour < 6;

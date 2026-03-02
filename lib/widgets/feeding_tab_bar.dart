@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/locale_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 
 class FeedingTabBar extends ConsumerWidget {
@@ -15,7 +16,7 @@ class FeedingTabBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = AppTheme.currentThemeColors;
+    final colors = ref.watch(colorsProvider);
     final s = ref.watch(stringsProvider);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -45,13 +46,7 @@ class FeedingTabBar extends ConsumerWidget {
             color: isSelected ? colors.card : Colors.transparent,
             borderRadius: BorderRadius.circular(26),
             boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: colors.accent.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
+                ? [BoxShadow(color: colors.accent.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
                 : null,
           ),
           child: Row(

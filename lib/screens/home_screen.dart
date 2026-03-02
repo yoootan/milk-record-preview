@@ -34,10 +34,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final timer = ref.read(timerProvider);
     final s = ref.read(stringsProvider);
     if (timer.isRunning) {
+      final colors = ref.read(colorsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(s.cannotSwitchTab),
-          backgroundColor: AppTheme.currentThemeColors.accent,
+          backgroundColor: colors.accent,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -52,6 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showSettings() {
     final themeState = ref.read(themeProvider);
     final locale = ref.read(localeProvider);
+    final colors = ref.read(colorsProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -61,6 +63,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         currentTheme: themeState.selectedTheme,
         nightModeEnabled: themeState.nightModeEnabled,
         currentLocale: locale,
+        colors: colors,
         onDefaultChanged: (value) {
           ref.read(defaultTabProvider.notifier).setDefaultTab(value);
         },
@@ -79,7 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(themeProvider);
+    final colors = ref.watch(colorsProvider);
     final s = ref.watch(stringsProvider);
 
     return Scaffold(
@@ -89,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.settings_rounded),
             onPressed: _showSettings,
-            color: AppTheme.currentThemeColors.textSub,
+            color: colors.textSub,
           ),
         ],
       ),
@@ -116,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Divider(
-                      color: AppTheme.currentThemeColors.textSub.withValues(alpha: 0.15),
+                      color: colors.textSub.withValues(alpha: 0.15),
                     ),
                   ),
                   const RecordList(),
@@ -135,6 +138,7 @@ class _SettingsSheet extends StatelessWidget {
   final AppColorTheme currentTheme;
   final bool nightModeEnabled;
   final String currentLocale;
+  final ThemeColors colors;
   final ValueChanged<String> onDefaultChanged;
   final ValueChanged<AppColorTheme> onThemeChanged;
   final ValueChanged<bool> onNightModeChanged;
@@ -145,6 +149,7 @@ class _SettingsSheet extends StatelessWidget {
     required this.currentTheme,
     required this.nightModeEnabled,
     required this.currentLocale,
+    required this.colors,
     required this.onDefaultChanged,
     required this.onThemeChanged,
     required this.onNightModeChanged,
@@ -153,7 +158,6 @@ class _SettingsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.currentThemeColors;
     final s = AppStrings.forLocale(currentLocale);
     return Container(
       padding: const EdgeInsets.all(24),
@@ -331,7 +335,7 @@ class _SettingsSheet extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: AppTheme.currentThemeColors.textSub,
+              color: colors.textSub,
             ),
           ),
         ],
@@ -341,7 +345,6 @@ class _SettingsSheet extends StatelessWidget {
 
   Widget _buildTabOption(BuildContext context, {required String label, required IconData icon, required String value}) {
     final isSelected = currentDefault == value;
-    final colors = AppTheme.currentThemeColors;
     return GestureDetector(
       onTap: () {
         onDefaultChanged(value);

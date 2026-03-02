@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/locale_provider.dart';
-import '../theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 
 class LiveBanner extends ConsumerStatefulWidget {
   const LiveBanner({super.key});
@@ -66,7 +66,7 @@ class _LiveBannerState extends ConsumerState<LiveBanner>
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.currentThemeColors;
+    final colors = ref.watch(colorsProvider);
     final s = ref.watch(stringsProvider);
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),

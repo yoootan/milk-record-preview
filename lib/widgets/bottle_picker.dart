@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_theme.dart';
 
 class BottlePicker extends StatefulWidget {
   final int initialAmount;
@@ -9,6 +8,8 @@ class BottlePicker extends StatefulWidget {
   final VoidCallback? onTouchStart;
   final VoidCallback? onTouchEnd;
   final VoidCallback? onTouchCancel;
+  final Color accentColor;
+  final Color textSubColor;
 
   const BottlePicker({
     super.key,
@@ -17,6 +18,8 @@ class BottlePicker extends StatefulWidget {
     this.onTouchStart,
     this.onTouchEnd,
     this.onTouchCancel,
+    required this.accentColor,
+    required this.textSubColor,
   });
 
   @override
@@ -84,8 +87,15 @@ class _BottlePickerState extends State<BottlePicker>
   }
 
   @override
+  void didUpdateWidget(BottlePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialAmount != oldWidget.initialAmount && widget.initialAmount != _selectedAmount) {
+      setState(() => _selectedAmount = widget.initialAmount);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.currentThemeColors;
     return Column(
       children: [
         // Amount display
@@ -94,17 +104,16 @@ class _BottlePickerState extends State<BottlePicker>
           style: GoogleFonts.mPlusRounded1c(
             fontSize: 42,
             fontWeight: FontWeight.w800,
-            color: colors.accent,
+            color: widget.accentColor,
           ),
           child: Text('${_selectedAmount}ml'),
         ),
         const SizedBox(height: 4),
-        // Bottle - wrapped in Listener to prevent parent scroll
+        // Bottle
         SizedBox(
           width: _bottleWidth,
           height: _bottleHeight,
           child: GestureDetector(
-            // Prevent parent ScrollView from intercepting vertical drags
             onVerticalDragStart: (details) {
               _isTouching = true;
               _updateAmount(_yToMl(details.localPosition.dy));
@@ -114,7 +123,6 @@ class _BottlePickerState extends State<BottlePicker>
               if (!_isTouching) return;
               final pos = details.localPosition;
               if (!_isInsideBottle(pos)) {
-                // 哺乳瓶の外に出た → リセット
                 _cancelTouch();
                 return;
               }
@@ -149,8 +157,8 @@ class _BottlePickerState extends State<BottlePicker>
                   size: const Size(_bottleWidth, _bottleHeight),
                   painter: _BottlePainter(
                     fillRatio: _selectedAmount / _maxAmount,
-                    accentColor: colors.accent,
-                    textSubColor: colors.textSub,
+                    accentColor: widget.accentColor,
+                    textSubColor: widget.textSubColor,
                     bubblePhase: _bubbleController.value,
                     isTouching: _isTouching,
                   ),
@@ -162,10 +170,10 @@ class _BottlePickerState extends State<BottlePicker>
         const SizedBox(height: 4),
         if (!_isTouching)
           Text(
-            'タッチして量を調整',
+            ' ',
             style: TextStyle(
               fontSize: 11,
-              color: colors.textSub.withValues(alpha: 0.6),
+              color: widget.textSubColor.withValues(alpha: 0.6),
             ),
           ),
       ],

@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/feeding_record.dart';
 import '../providers/feeding_provider.dart';
 import '../providers/locale_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 
 class SpitUpButton extends ConsumerStatefulWidget {
@@ -21,11 +22,12 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
   final _mediumKey = GlobalKey();
   final _largeKey = GlobalKey();
 
+  static const _smallColor = Color(0xFF5B9BD5); // Blue
+  static const _mediumColor = Color(0xFFF4845F); // Orange
+  static const _largeColor = Color(0xFFEF5350); // Red
+
   void _onPanStart(DragStartDetails details) {
-    setState(() {
-      _isActive = true;
-      _highlighted = null;
-    });
+    setState(() { _isActive = true; _highlighted = null; });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -57,6 +59,7 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
 
   void _recordSpitUp(String amount) {
     final s = ref.read(stringsProvider);
+    final colors = ref.read(colorsProvider);
     final now = DateTime.now();
     final record = FeedingRecord(
       id: const Uuid().v4(),
@@ -72,7 +75,7 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(s.spitUpRecorded(label)),
-        backgroundColor: AppTheme.currentThemeColors.accent,
+        backgroundColor: colors.accent,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
@@ -89,9 +92,18 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
     }
   }
 
+  Color _chipColor(String value) {
+    switch (value) {
+      case 'small': return _smallColor;
+      case 'medium': return _mediumColor;
+      case 'large': return _largeColor;
+      default: return _smallColor;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.currentThemeColors;
+    final colors = ref.watch(colorsProvider);
     final s = ref.watch(stringsProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -117,24 +129,23 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              // Button
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
                 decoration: BoxDecoration(
                   color: _isActive ? colors.red.withValues(alpha: 0.12) : colors.gray,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.arrow_upward_rounded, size: 14, color: _isActive ? colors.red : colors.textSub),
-                    const SizedBox(width: 4),
-                    Text(
-                      s.spitUp,
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _isActive ? colors.red : colors.textSub),
-                    ),
-                  ],
+                child: Text(
+                  s.spitUp,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _isActive ? colors.red : colors.textSub,
+                  ),
                 ),
               ),
+              // Popup
               if (_isActive)
                 Positioned(
                   bottom: 40,
@@ -152,9 +163,9 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildChip(s.spitUpSmall, 'small', _smallKey, colors),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         _buildChip(s.spitUpMedium, 'medium', _mediumKey, colors),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         _buildChip(s.spitUpLarge, 'large', _largeKey, colors),
                       ],
                     ),
@@ -169,21 +180,22 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
 
   Widget _buildChip(String label, String value, GlobalKey key, ThemeColors colors) {
     final isHighlighted = _highlighted == value;
+    final chipColor = _chipColor(value);
     return Container(
       key: key,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: isHighlighted ? colors.accentLight : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        color: isHighlighted ? chipColor.withValues(alpha: 0.18) : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        border: isHighlighted ? Border.all(color: chipColor.withValues(alpha: 0.4), width: 1.5) : null,
       ),
-      child: AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 100),
+      child: Text(
+        label,
         style: TextStyle(
-          fontSize: isHighlighted ? 14 : 13,
-          fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w600,
-          color: isHighlighted ? colors.accent : colors.textSub,
+          fontSize: isHighlighted ? 15 : 14,
+          fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600,
+          color: isHighlighted ? chipColor : colors.textSub,
         ),
-        child: Text(label),
       ),
     );
   }
