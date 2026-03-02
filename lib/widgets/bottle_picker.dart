@@ -6,11 +6,17 @@ import '../theme/app_theme.dart';
 class BottlePicker extends StatefulWidget {
   final int initialAmount;
   final ValueChanged<int> onAmountChanged;
+  final VoidCallback? onTouchStart;
+  final VoidCallback? onTouchEnd;
+  final VoidCallback? onTouchCancel;
 
   const BottlePicker({
     super.key,
-    this.initialAmount = 100,
+    this.initialAmount = 0,
     required this.onAmountChanged,
+    this.onTouchStart,
+    this.onTouchEnd,
+    this.onTouchCancel,
   });
 
   @override
@@ -19,7 +25,7 @@ class BottlePicker extends StatefulWidget {
 
 class _BottlePickerState extends State<BottlePicker>
     with SingleTickerProviderStateMixin {
-  int _selectedAmount = 100;
+  int _selectedAmount = 0;
   bool _isTouching = false;
   late AnimationController _bubbleController;
 
@@ -43,12 +49,11 @@ class _BottlePickerState extends State<BottlePicker>
   }
 
   void _updateAmount(double localY, double height) {
-    // Bottle fill area: top 30% to bottom 95% of widget
+    // Bottle fill area mapped to SVG coordinates
     final fillTop = height * 0.28;
     final fillBottom = height * 0.93;
     final fillHeight = fillBottom - fillTop;
 
-    // Clamp and invert (top = max, bottom = 0)
     final clamped = localY.clamp(fillTop, fillBottom);
     final ratio = 1.0 - (clamped - fillTop) / fillHeight;
     final raw = (ratio * _maxAmount).round();
@@ -77,7 +82,7 @@ class _BottlePickerState extends State<BottlePicker>
           child: Text('${_selectedAmount}ml'),
         ),
         const SizedBox(height: 4),
-        // Bottle SVG-like UI
+        // Bottle
         SizedBox(
           width: 180,
           height: 260,
@@ -85,15 +90,38 @@ class _BottlePickerState extends State<BottlePicker>
             onPanStart: (details) {
               _isTouching = true;
               _updateAmount(details.localPosition.dy, 260);
+              widget.onTouchStart?.call();
             },
             onPanUpdate: (details) {
-              _updateAmount(details.localPosition.dy, 260);
+              // Cancel if dragged outside bottle bounds
+              final pos = details.localPosition;
+              if (pos.dx < 0 || pos.dx > 180 || pos.dy < 0 || pos.dy > 260) {
+                if (_isTouching) {
+                  _isTouching = false;
+                  setState(() => _selectedAmount = 0);
+                  widget.onAmountChanged(0);
+                  widget.onTouchCancel?.call();
+                }
+                return;
+              }
+              _updateAmount(pos.dy, 260);
             },
             onPanEnd: (_) {
-              _isTouching = false;
+              if (_isTouching) {
+                _isTouching = false;
+                widget.onTouchEnd?.call();
+              }
             },
             onTapDown: (details) {
+              _isTouching = true;
               _updateAmount(details.localPosition.dy, 260);
+              widget.onTouchStart?.call();
+            },
+            onTapUp: (_) {
+              if (_isTouching) {
+                _isTouching = false;
+                widget.onTouchEnd?.call();
+              }
             },
             child: AnimatedBuilder(
               animation: _bubbleController,
@@ -113,13 +141,14 @@ class _BottlePickerState extends State<BottlePicker>
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          'タッチして量を調整',
-          style: TextStyle(
-            fontSize: 11,
-            color: colors.textSub.withValues(alpha: 0.6),
+        if (!_isTouching)
+          Text(
+            'タッチして量を調整',
+            style: TextStyle(
+              fontSize: 11,
+              color: colors.textSub.withValues(alpha: 0.6),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -144,8 +173,6 @@ class _BottlePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-
-    // Proportions (based on SVG viewBox 220x320 scaled to widget)
     final sx = w / 220;
     final sy = h / 320;
 
@@ -177,7 +204,6 @@ class _BottlePainter extends CustomPainter {
     canvas.drawPath(path, paint);
     canvas.drawPath(path, strokePaint);
 
-    // Cap highlight
     final hlPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
@@ -201,15 +227,10 @@ class _BottlePainter extends CustomPainter {
         ..strokeWidth = 1,
     );
 
-    // Ring lines
     final linePaint = Paint()
       ..color = const Color(0xFF9CBDD6).withValues(alpha: 0.35)
       ..strokeWidth = 0.5;
-    canvas.drawLine(
-      Offset(76 * sx, 62 * sy),
-      Offset(144 * sx, 62 * sy),
-      linePaint,
-    );
+    canvas.drawLine(Offset(76 * sx, 62 * sy), Offset(144 * sx, 62 * sy), linePaint);
     canvas.drawLine(
       Offset(76 * sx, 66 * sy),
       Offset(144 * sx, 66 * sy),
@@ -225,10 +246,7 @@ class _BottlePainter extends CustomPainter {
       ..lineTo(150 * sx, 72 * sy)
       ..close();
 
-    canvas.drawPath(
-      path,
-      Paint()..color = Colors.white.withValues(alpha: 0.95),
-    );
+    canvas.drawPath(path, Paint()..color = Colors.white.withValues(alpha: 0.95));
     canvas.drawPath(
       path,
       Paint()
@@ -252,10 +270,7 @@ class _BottlePainter extends CustomPainter {
 
   void _drawBody(Canvas canvas, double sx, double sy) {
     final path = _bodyPath(sx, sy);
-    canvas.drawPath(
-      path,
-      Paint()..color = Colors.white.withValues(alpha: 0.94),
-    );
+    canvas.drawPath(path, Paint()..color = Colors.white.withValues(alpha: 0.94));
     canvas.drawPath(
       path,
       Paint()
@@ -279,10 +294,7 @@ class _BottlePainter extends CustomPainter {
 
     // Milk gradient
     final milkRect = Rect.fromLTWH(
-      35 * sx,
-      milkTop * sy,
-      150 * sx,
-      (bottleBot - milkTop) * sy,
+      35 * sx, milkTop * sy, 150 * sx, (bottleBot - milkTop) * sy,
     );
     final milkPaint = Paint()
       ..shader = const LinearGradient(
@@ -292,14 +304,14 @@ class _BottlePainter extends CustomPainter {
       ).createShader(milkRect);
     canvas.drawRect(milkRect, milkPaint);
 
-    // Wave at top of milk
+    // Wave at top
     final wavePaint = Paint()..color = const Color(0xFFFFF8E8).withValues(alpha: 0.45);
     final wavePath = Path();
     final waveY = milkTop * sy;
     wavePath.moveTo(35 * sx, waveY);
     for (double x = 35; x <= 185; x += 1) {
       final wave = sin((x / 20 + bubblePhase * 2 * pi) * 1) * 2;
-      wavePath.lineTo(x * sx, (waveY + wave * sy));
+      wavePath.lineTo(x * sx, waveY + wave * sy);
     }
     wavePath.lineTo(185 * sx, waveY + 10 * sy);
     wavePath.lineTo(35 * sx, waveY + 10 * sy);
@@ -326,7 +338,6 @@ class _BottlePainter extends CustomPainter {
     for (final b in bubbles) {
       final phase = (bubblePhase + b.delay) % 1.0;
       if (b.startY < milkTop) continue;
-
       final y = b.startY - phase * 40;
       if (y < milkTop) continue;
 
@@ -348,9 +359,7 @@ class _BottlePainter extends CustomPainter {
     const bottleH = bottleBot - bottleTop;
     const bodyR = 184.0;
 
-    final scalePaint = Paint()
-      ..color = const Color(0xFFC05050)
-      ..strokeWidth = 0.5;
+    final scalePaint = Paint()..color = const Color(0xFFC05050);
 
     final textStyle = TextStyle(
       fontSize: 9 * sx,

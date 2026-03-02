@@ -12,40 +12,55 @@ class SpitUpButton extends ConsumerStatefulWidget {
   ConsumerState<SpitUpButton> createState() => _SpitUpButtonState();
 }
 
-class _SpitUpButtonState extends ConsumerState<SpitUpButton>
-    with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+class _SpitUpButtonState extends ConsumerState<SpitUpButton> {
+  bool _isActive = false;
+  String? _highlighted; // 'small' | 'medium' | 'large' | null
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 250),
-      vsync: this,
-    );
-    _scaleAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    );
-  }
+  // Keys for hit-testing the option chips
+  final _smallKey = GlobalKey();
+  final _mediumKey = GlobalKey();
+  final _largeKey = GlobalKey();
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _toggle() {
+  void _onPanStart(DragStartDetails details) {
     setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
+      _isActive = true;
+      _highlighted = null;
     });
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (!_isActive) return;
+    final pos = details.globalPosition;
+    setState(() {
+      _highlighted = _hitTest(pos);
+    });
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    if (!_isActive) return;
+    setState(() => _isActive = false);
+
+    if (_highlighted != null) {
+      _recordSpitUp(_highlighted!);
+    }
+    _highlighted = null;
+  }
+
+  String? _hitTest(Offset globalPosition) {
+    for (final entry in {
+      'small': _smallKey,
+      'medium': _mediumKey,
+      'large': _largeKey,
+    }.entries) {
+      final box = entry.value.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null) continue;
+      final topLeft = box.localToGlobal(Offset.zero);
+      final rect = topLeft & box.size;
+      if (rect.contains(globalPosition)) {
+        return entry.key;
+      }
+    }
+    return null;
   }
 
   void _recordSpitUp(String amount) {
@@ -63,7 +78,7 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
     final label = _amountLabel(amount);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('吐き戻し（$label）を記録しました'),
+        content: Text('吐き戻し（$label）記録しました'),
         backgroundColor: AppTheme.currentThemeColors.accent,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -72,8 +87,6 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
         duration: const Duration(seconds: 2),
       ),
     );
-
-    _toggle();
   }
 
   String _amountLabel(String amount) {
@@ -91,102 +104,127 @@ class _SpitUpButtonState extends ConsumerState<SpitUpButton>
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.currentThemeColors;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (_isExpanded)
-            ScaleTransition(
-              scale: _scaleAnimation,
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: GestureDetector(
+          onPanStart: _onPanStart,
+          onPanUpdate: _onPanUpdate,
+          onPanEnd: _onPanEnd,
+          // Also handle simple long press for non-drag
+          onLongPressStart: (details) {
+            setState(() {
+              _isActive = true;
+              _highlighted = null;
+            });
+          },
+          onLongPressMoveUpdate: (details) {
+            if (!_isActive) return;
+            setState(() {
+              _highlighted = _hitTest(details.globalPosition);
+            });
+          },
+          onLongPressEnd: (details) {
+            if (!_isActive) return;
+            setState(() => _isActive = false);
+            if (_highlighted != null) {
+              _recordSpitUp(_highlighted!);
+            }
+            _highlighted = null;
+          },
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // The button itself
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  color: _isActive
+                      ? colors.red.withValues(alpha: 0.12)
+                      : colors.gray,
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildAmountChip('少量', 'small', const Color(0xFFFFF3E0)),
+                    Icon(
+                      Icons.arrow_upward_rounded,
+                      size: 14,
+                      color: _isActive ? colors.red : colors.textSub,
+                    ),
                     const SizedBox(width: 4),
-                    _buildAmountChip('中量', 'medium', const Color(0xFFFFE0B2)),
-                    const SizedBox(width: 4),
-                    _buildAmountChip('大量', 'large', const Color(0xFFFFCCBC)),
+                    Text(
+                      '吐き戻し',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _isActive ? colors.red : colors.textSub,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-          GestureDetector(
-            onTap: _toggle,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: _isExpanded
-                    ? const Color(0xFFEF5350).withValues(alpha: 0.12)
-                    : AppTheme.currentThemeColors.gray,
-                borderRadius: BorderRadius.circular(20),
-                border: _isExpanded
-                    ? Border.all(
-                        color: const Color(0xFFEF5350).withValues(alpha: 0.3))
-                    : null,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.arrow_upward_rounded,
-                    size: 16,
-                    color: _isExpanded
-                        ? const Color(0xFFEF5350)
-                        : AppTheme.currentThemeColors.textSub,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '吐き戻し',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _isExpanded
-                          ? const Color(0xFFEF5350)
-                          : AppTheme.currentThemeColors.textSub,
+              // Popup options (positioned above button)
+              if (_isActive)
+                Positioned(
+                  bottom: 40,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 20,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildChip('少量', 'small', _smallKey, colors),
+                        const SizedBox(width: 4),
+                        _buildChip('中量', 'medium', _mediumKey, colors),
+                        const SizedBox(width: 4),
+                        _buildChip('大量', 'large', _largeKey, colors),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildAmountChip(String label, String value, Color bgColor) {
-    return GestureDetector(
-      onTap: () => _recordSpitUp(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(18),
+  Widget _buildChip(
+    String label,
+    String value,
+    GlobalKey key,
+    ThemeColors colors,
+  ) {
+    final isHighlighted = _highlighted == value;
+    return Container(
+      key: key,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isHighlighted ? colors.accentLight : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 100),
+        style: TextStyle(
+          fontSize: isHighlighted ? 14 : 13,
+          fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w600,
+          color: isHighlighted ? colors.accent : colors.textSub,
         ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF5D4037),
-          ),
-        ),
+        child: Text(label),
       ),
     );
   }
