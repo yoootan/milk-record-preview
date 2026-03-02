@@ -47,13 +47,19 @@ class RecordList extends ConsumerWidget {
         for (final entry in grouped.entries) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-            child: Text(
-              _formatDateHeader(entry.key, s),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: colors.textSub,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  _formatDateHeader(entry.key, s),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textSub,
+                  ),
+                ),
+                const Spacer(),
+                ..._buildDailySummary(entry.value, s, colors),
+              ],
             ),
           ),
           ...entry.value.map((record) => _buildRecordItem(context, ref, record, s)),
@@ -244,6 +250,48 @@ class RecordList extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildDailySummary(List<FeedingRecord> records, dynamic s, ThemeColors colors) {
+    final widgets = <Widget>[];
+
+    // 母乳合計時間
+    final breastSeconds = records
+        .where((r) => r.feedingType == FeedingType.breastMilk)
+        .fold<int>(0, (sum, r) => sum + r.durationSeconds);
+
+    // ミルク合計ml
+    final formulaMl = records
+        .where((r) => r.feedingType == FeedingType.formula)
+        .fold<int>(0, (sum, r) => sum + (r.amountMl ?? 0));
+
+    if (breastSeconds > 0) {
+      final min = breastSeconds ~/ 60;
+      final sec = breastSeconds % 60;
+      final duration = min > 0
+          ? (sec > 0 ? '${min}m${sec}s' : '${min}m')
+          : '${sec}s';
+      widgets.add(
+        Text(
+          s.dailyBreastTotal(duration),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colors.accent),
+        ),
+      );
+    }
+
+    if (formulaMl > 0) {
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(width: 8));
+      }
+      widgets.add(
+        Text(
+          s.dailyFormulaTotal(formulaMl),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFFFFB347)),
+        ),
+      );
+    }
+
+    return widgets;
   }
 
   String _spitUpLabel(String? amount, dynamic s) {

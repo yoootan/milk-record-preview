@@ -56,6 +56,9 @@ abstract class AppStringBase {
   String get themeDark;
   String liveBanner(int count);
   String get cannotSwitchTab;
+  String dailyBreastTotal(String duration);
+  String dailyFormulaTotal(int ml);
+  String elapsedSinceLastFeed(String time);
 }
 
 class _JaStrings implements AppStringBase {
@@ -102,6 +105,9 @@ class _JaStrings implements AppStringBase {
   @override String get themeDark => 'ダーク';
   @override String liveBanner(int count) => 'いま$count人が授乳中';
   @override String get cannotSwitchTab => '計測中はタブを切り替えられません';
+  @override String dailyBreastTotal(String duration) => '母乳 $duration';
+  @override String dailyFormulaTotal(int ml) => 'ミルク ${ml}ml';
+  @override String elapsedSinceLastFeed(String time) => '前回から $time';
 }
 
 class _EnStrings implements AppStringBase {
@@ -148,4 +154,7 @@ class _EnStrings implements AppStringBase {
   @override String get themeDark => 'Dark';
   @override String liveBanner(int count) => '$count people feeding now';
   @override String get cannotSwitchTab => 'Cannot switch tabs while recording';
+  @override String dailyBreastTotal(String duration) => 'Breast $duration';
+  @override String dailyFormulaTotal(int ml) => 'Formula ${ml}ml';
+  @override String elapsedSinceLastFeed(String time) => '$time since last feed';
 }

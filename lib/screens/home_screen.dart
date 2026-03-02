@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/breast_milk_view.dart';
 import '../widgets/feeding_tab_bar.dart';
 import '../widgets/formula_view.dart';
+import '../widgets/elapsed_time_banner.dart';
 import '../widgets/live_banner.dart';
 import '../widgets/record_list.dart';
 import '../widgets/spit_up_button.dart';
@@ -99,6 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Column(
         children: [
           const LiveBanner(),
+          const ElapsedTimeBanner(),
           FeedingTabBar(
             selectedIndex: _selectedTabIndex,
             onTabChanged: _onTabChanged,
