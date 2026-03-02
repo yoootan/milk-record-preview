@@ -109,11 +109,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  AnimatedSwitcher(
+                  AnimatedSize(
                     duration: const Duration(milliseconds: 300),
-                    child: _selectedTabIndex == 0
-                        ? const BreastMilkView(key: ValueKey('breast'))
-                        : const FormulaView(key: ValueKey('formula')),
+                    curve: Curves.easeInOut,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _selectedTabIndex == 0
+                          ? const BreastMilkView(key: ValueKey('breast'))
+                          : const FormulaView(key: ValueKey('formula')),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const SpitUpButton(),
